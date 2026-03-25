@@ -1,21 +1,21 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import mikuImg from "./hatsune-miku-png.png"
 
 const M = {
-  bg:"#071116",
-  panel:"#0d1a1f",
-  panel2:"#0a1519",
-  line:"#183138",
-  text:"#d6ece9",
-  muted:"#7d9a97",
-  accent:"#3ecfc6",
-  accent2:"#24928c",
+  bg:"#071015",
+  panel:"#0c171c",
+  panel2:"#091217",
+  line:"#163038",
+  border:"#1c3940",
+  text:"#d8ece8",
+  muted:"#789490",
+  accent:"#3dd0c6",
+  accent2:"#1f8a84",
   pos:"#fb923c",
   neg:"#60a5fa",
   ok:"#10b981",
   warn:"#f59e0b",
-  border:"#1a3530",
-  radius:14,
+  radius:16,
 }
 
 const PHONE = "5591993922666"
@@ -23,8 +23,10 @@ const BF = "system-ui,-apple-system,sans-serif"
 const TF = "'Press Start 2P', monospace"
 
 const CSS = `
-  @keyframes fadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
-  @keyframes pulseLine { from { opacity:.7 } to { opacity:1 } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
+  @keyframes pulseGlow { 0%,100% { opacity:.55 } 50% { opacity:1 } }
+  @keyframes popIn { 0% { opacity:0; transform:scale(.8) } 100% { opacity:1; transform:scale(1) } }
+  @keyframes floatIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
 `
 
 const cor = n => n < 0 ? M.neg : n > 0 ? M.pos : M.accent
@@ -35,14 +37,14 @@ function Tela({children}) {
   return (
     <div style={{
       minHeight:"100vh",
-      background:`radial-gradient(circle at 20% 10%, #0d2626 0%, ${M.bg} 48%),
-                  radial-gradient(circle at 80% 100%, #1a0f16 0%, transparent 35%)`,
+      background:`radial-gradient(circle at 20% 12%, #0c2424 0%, ${M.bg} 48%),
+                  radial-gradient(circle at 80% 100%, #1a1017 0%, transparent 36%)`,
       color:M.text,
       fontFamily:BF,
       padding:"16px 14px 34px",
     }}>
       <div style={{
-        maxWidth:540,
+        maxWidth:560,
         margin:"0 auto",
         minHeight:"calc(100vh - 50px)",
         display:"flex",
@@ -55,7 +57,7 @@ function Tela({children}) {
   )
 }
 
-function Card({children, style={}}) {
+function Card({children,style={}}) {
   return (
     <div style={{
       background:M.panel,
@@ -79,7 +81,7 @@ function Btn({label,onClick,disabled,ghost=false,color=M.accent}) {
       background:disabled ? M.line : ghost ? "transparent" : color,
       color:disabled ? M.muted : ghost ? color : M.bg,
       cursor:disabled ? "not-allowed" : "pointer",
-      opacity:disabled ? .5 : 1,
+      opacity:disabled ? .48 : 1,
       fontFamily:TF,
       fontSize:10,
       letterSpacing:.5,
@@ -90,7 +92,7 @@ function Btn({label,onClick,disabled,ghost=false,color=M.accent}) {
   )
 }
 
-function Prog({index,total}) {
+function Progress({index,total}) {
   return (
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
       <div style={{flex:1,height:5,background:M.line,borderRadius:99,overflow:"hidden"}}>
@@ -106,7 +108,7 @@ function Prog({index,total}) {
   )
 }
 
-function Conta({a,b,resultado=null,showResult=false}) {
+function Equation({a,b,result=null,reveal=false}) {
   return (
     <Card style={{
       background:M.panel2,
@@ -124,40 +126,55 @@ function Conta({a,b,resultado=null,showResult=false}) {
         textAlign:"center",
         padding:"6px 10px",
         borderRadius:10,
-        border:`1.5px solid ${showResult ? `${cor(resultado)}55` : M.line}`,
-        background:showResult ? `${cor(resultado)}18` : `${M.line}55`,
-        color:showResult ? cor(resultado) : M.muted,
+        border:`1.5px solid ${reveal ? `${cor(result)}66` : M.line}`,
+        background:reveal ? `${cor(result)}18` : `${M.line}66`,
+        color:reveal ? cor(result) : M.muted,
         fontFamily:TF,
         fontSize:20,
       }}>
-        {showResult ? fmtC(resultado) : "?"}
+        {reveal ? fmtC(result) : "?"}
       </div>
     </Card>
   )
 }
 
+function useLineModel(a,result) {
+  return useMemo(() => {
+    const min = Math.min(a, result, 0) - 2
+    const max = Math.max(a, result, 0) + 2
+    const count = max - min + 1
+    const values = Array.from({length:count}, (_, i) => min + i)
+    const pct = value => (((value - min) + 0.5) / count) * 100
+    return { min, max, count, values, pct }
+  }, [a, result])
+}
+
 function NumberLine({
   a,
   result,
-  showPath=false,
-  showResult=false,
-  highlight=null,
-  interactive=false,
+  mode="neutral",
   selected=null,
-  onSelect,
+  showResult=false,
+  interactiveValues=false,
+  onPickValue,
+  sideChoice=null,
+  onPickSide,
+  pulseStart=false,
+  pulseEnd=false,
 }) {
-  const min = Math.min(a, result, 0) - 2
-  const max = Math.max(a, result, 0) + 2
-  const count = max - min + 1
-  const values = Array.from({length:count}, (_, i) => min + i)
-  const pct = value => (((value - min) + 0.5) / count) * 100
-
+  const { values, pct } = useLineModel(a, result)
+  const lineTop = "60%"
+  const dir = Math.sign(result - a)
   const path = []
-  if (showPath) {
-    const dir = Math.sign(result - a)
-    const steps = Math.abs(result - a)
-    for (let i = 0; i < steps; i += 1) path.push(a + (dir * i))
-  }
+  const steps = Math.abs(result - a)
+  for (let i = 0; i < steps; i += 1) path.push(a + dir*i)
+
+  const showPath = mode === "path" || mode === "result" || mode === "value"
+  const mikuPos = mode === "start"
+    ? a
+    : mode === "path" || mode === "result" || mode === "explain"
+      ? result
+      : selected ?? a
 
   return (
     <Card style={{padding:0,overflow:"hidden"}}>
@@ -168,7 +185,6 @@ function NumberLine({
         justifyContent:"space-between",
         fontFamily:TF,
         fontSize:8,
-        color:M.muted,
         background:"#ffffff03",
       }}>
         <span style={{color:M.neg}}>NEG</span>
@@ -176,10 +192,10 @@ function NumberLine({
         <span style={{color:M.pos}}>POS</span>
       </div>
 
-      <div style={{position:"relative",height:112,padding:"0 8px"}}>
+      <div style={{position:"relative",height:116,padding:"0 8px"}}>
         <div style={{
           position:"absolute",
-          top:"62%",
+          top:lineTop,
           left:"1%",
           right:"1%",
           height:2,
@@ -187,11 +203,26 @@ function NumberLine({
           background:`linear-gradient(to right, ${M.line}, ${M.accent}55, ${M.line})`,
         }}/>
 
-        {path.map((value, index) => (
+        {showPath && (
+          <div style={{
+            position:"absolute",
+            top:lineTop,
+            left:`${pct(Math.min(a, result))}%`,
+            width:`${Math.abs(pct(result) - pct(a))}%`,
+            height:4,
+            transform:"translateY(-50%)",
+            borderRadius:99,
+            background:result >= 0
+              ? `linear-gradient(to right, ${M.pos}35, ${M.pos})`
+              : `linear-gradient(to right, ${M.neg}, ${M.neg}35)`,
+          }}/>
+        )}
+
+        {showPath && path.map((value, index)=>(
           <div key={`${value}-${index}`} style={{
             position:"absolute",
             left:`${pct(value)}%`,
-            top:"62%",
+            top:lineTop,
             transform:"translate(-50%, -50%)",
             width:7,
             height:7,
@@ -201,38 +232,24 @@ function NumberLine({
           }}/>
         ))}
 
-        {showPath && (
-          <div style={{
-            position:"absolute",
-            top:"62%",
-            height:4,
-            transform:"translateY(-50%)",
-            left:`${pct(Math.min(a, result))}%`,
-            width:`${Math.abs(pct(result) - pct(a))}%`,
-            borderRadius:99,
-            background:result >= 0
-              ? `linear-gradient(to right, ${M.pos}40, ${M.pos})`
-              : `linear-gradient(to right, ${M.neg}, ${M.neg}40)`,
-            animation:"pulseLine .4s ease-in-out infinite alternate",
-          }}/>
-        )}
-
         <div style={{
           position:"absolute",
           left:`${pct(a)}%`,
-          top:"62%",
+          top:lineTop,
           transform:"translate(-50%, -50%)",
           width:28,
           height:28,
           borderRadius:"50%",
           border:`2px dashed ${cor(a)}85`,
+          boxShadow:pulseStart ? `0 0 14px ${cor(a)}55` : "none",
+          animation:pulseStart ? "pulseGlow .9s infinite" : "none",
         }}/>
 
         {selected!==null && !showResult && (
           <div style={{
             position:"absolute",
             left:`${pct(selected)}%`,
-            top:"62%",
+            top:lineTop,
             transform:"translate(-50%, -50%)",
             width:30,
             height:30,
@@ -247,7 +264,7 @@ function NumberLine({
           <div style={{
             position:"absolute",
             left:`${pct(result)}%`,
-            top:"62%",
+            top:lineTop,
             transform:"translate(-50%, -50%)",
             width:36,
             height:36,
@@ -260,40 +277,44 @@ function NumberLine({
             color:M.bg,
             fontFamily:TF,
             fontSize:Math.abs(result) >= 10 ? 10 : 13,
+            boxShadow:pulseEnd ? `0 0 18px ${cor(result)}66` : "none",
+            animation:pulseEnd ? "popIn .25s both, pulseGlow 1s infinite" : "popIn .25s both",
           }}>
             {fmt(result)}
           </div>
         )}
 
-        {highlight!==null && (
-          <div style={{
-            position:"absolute",
-            left:`${pct(highlight)}%`,
-            top:"31%",
-            transform:"translateX(-50%)",
-            color:M.accent,
-            fontSize:11,
-            fontFamily:TF,
-          }}>
-            foco
-          </div>
-        )}
-
         <div style={{
           position:"absolute",
-          right:14,
-          top:10,
-          display:"flex",
-          alignItems:"center",
-          gap:8,
-          padding:"6px 8px",
-          border:`1px solid ${M.border}`,
-          borderRadius:10,
-          background:M.panel2,
+          left:`${pct(mikuPos)}%`,
+          top:lineTop,
+          transform:"translate(-50%, -96%)",
+          zIndex:4,
+          filter:`drop-shadow(0 0 8px ${M.accent}30)`,
         }}>
-          <img src={mikuImg} alt="Miku" style={{width:22,height:"auto"}}/>
-          <span style={{fontSize:11,color:M.muted,fontFamily:BF}}>guia visual</span>
+          <img src={mikuImg} alt="guia visual" style={{width:42,height:"auto",display:"block"}}/>
         </div>
+
+        {onPickSide && (
+          <>
+            <button onClick={()=>onPickSide("left")} style={{
+              position:"absolute",left:16,top:12,
+              padding:"8px 12px",borderRadius:12,
+              border:`1.5px solid ${sideChoice==="left"?M.neg:M.border}`,
+              background:sideChoice==="left"?`${M.neg}18`:M.panel2,
+              color:sideChoice==="left"?M.neg:M.text,
+              fontFamily:TF,fontSize:10,cursor:"pointer",
+            }}>ESQUERDA</button>
+            <button onClick={()=>onPickSide("right")} style={{
+              position:"absolute",right:16,top:12,
+              padding:"8px 12px",borderRadius:12,
+              border:`1.5px solid ${sideChoice==="right"?M.pos:M.border}`,
+              background:sideChoice==="right"?`${M.pos}18`:M.panel2,
+              color:sideChoice==="right"?M.pos:M.text,
+              fontFamily:TF,fontSize:10,cursor:"pointer",
+            }}>DIREITA</button>
+          </>
+        )}
       </div>
 
       <div style={{
@@ -302,7 +323,7 @@ function NumberLine({
         borderTop:`1px solid ${M.border}`,
         background:"#00000018",
       }}>
-        {values.map(value => {
+        {values.map(value=>{
           const active = value === a || value === result || value === selected
           const color = value === a
             ? cor(a)
@@ -315,9 +336,9 @@ function NumberLine({
                   : M.muted
           const content = value === 0 ? "0" : fmt(value)
 
-          if (interactive) {
+          if (interactiveValues) {
             return (
-              <button key={value} onClick={()=>onSelect?.(value)} style={{
+              <button key={value} onClick={()=>onPickValue?.(value)} style={{
                 flex:1,
                 background:"transparent",
                 border:"none",
@@ -351,13 +372,13 @@ function NumberLine({
   )
 }
 
-function StepCard({step,total,title,text}) {
+function Prompt({kicker,title,text}) {
   return (
     <Card style={{animation:"fadeUp .25s both"}}>
       <div style={{fontSize:11,color:M.accent,fontFamily:TF,marginBottom:10}}>
-        ETAPA {step}/{total}
+        {kicker}
       </div>
-      <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
+      <div style={{fontSize:15,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
         {title}
       </div>
       <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
@@ -370,44 +391,41 @@ function StepCard({step,total,title,text}) {
 function ObserveSlide({a,b,onDone}) {
   const result = a + b
   const [step,setStep] = useState(0)
-
-  const content = [
+  const steps = [
     {
-      title:"Comeco visivel",
-      text:`A reta mostra onde a conta comeca: ${fmtC(a)}.`,
-      highlight:a,
-      showPath:false,
-      showResult:false,
+      kicker:"PASSO 1",
+      title:"Veja o ponto de partida",
+      text:`A conta comeca em ${fmtC(a)}.`,
+      lineMode:"start",
     },
     {
-      title:"Deslocamento claro",
-      text:`Agora acompanhe ${Math.abs(b)} ${Math.abs(b)===1?"passo":"passos"} ${b>0?"para a direita":"para a esquerda"}.`,
-      highlight:null,
-      showPath:true,
-      showResult:false,
+      kicker:"PASSO 2",
+      title:"Veja para qual lado segue",
+      text:`Como ${fmtC(b)} ${b>0?"esta no lado positivo, seguimos para a direita.":"esta no lado negativo, seguimos para a esquerda."}`,
+      lineMode:"path",
     },
     {
-      title:"Chegada explicita",
-      text:`A chegada fica em ${fmtC(result)}.`,
-      highlight:null,
-      showPath:true,
-      showResult:true,
+      kicker:"PASSO 3",
+      title:"Veja a chegada",
+      text:`A reta termina em ${fmtC(result)}.`,
+      lineMode:"result",
     },
   ]
-
-  const current = content[step]
-  const last = step === content.length - 1
+  const current = steps[step]
+  const last = step === steps.length - 1
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      <Conta a={a} b={b} resultado={result} showResult={last}/>
-      <StepCard step={step+1} total={content.length} title={current.title} text={current.text}/>
+      <Equation a={a} b={b} result={result} reveal={last} />
+      <Prompt kicker={current.kicker} title={current.title} text={current.text} />
       <NumberLine
         a={a}
         result={result}
-        highlight={current.highlight}
-        showPath={current.showPath}
-        showResult={current.showResult}
+        mode={current.lineMode}
+        showResult={current.lineMode==="result"}
+        showPath={current.lineMode==="path" || current.lineMode==="result"}
+        pulseStart={current.lineMode==="start"}
+        pulseEnd={current.lineMode==="result"}
       />
       <Btn
         label={last ? "Fechar demonstracao" : "Proximo passo"}
@@ -420,60 +438,43 @@ function ObserveSlide({a,b,onDone}) {
   )
 }
 
-function ConfirmSlide({a,b,onCorrect,onWrong}) {
+function DirectionSlide({a,b,onCorrect,onWrong}) {
   const result = a + b
   const [choice,setChoice] = useState(null)
-  const options = useState(()=>{
-    const wrong = result + (result >= 0 ? -1 : 1)
-    return [result, wrong].sort(()=>Math.random()-.5)
-  })[0]
+  const correctSide = b > 0 ? "right" : "left"
 
-  const choose = value => {
+  const choose = side => {
     if (choice!==null) return
-    setChoice(value)
-    if (value === result) onCorrect?.()
+    setChoice(side)
+    if (side === correctSide) onCorrect?.()
     else onWrong?.()
   }
 
-  const correct = choice === result
+  const correct = choice === correctSide
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      <Conta a={a} b={b}/>
-      <StepCard
-        step={1}
-        total={1}
-        title="Leia primeiro, responda depois"
-        text={`Observe a reta inteira antes de decidir onde a conta termina.`}
+      <Equation a={a} b={b} />
+      <Prompt
+        kicker="DECISAO 1"
+        title="Para qual lado a reta segue?"
+        text={`Olhe para o sinal de ${fmtC(b)} e escolha o lado correto antes de chegar ao resultado.`}
       />
-      <NumberLine a={a} result={result} showPath showResult />
-      <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,textAlign:"center"}}>
-        Qual chegada combina com esse percurso?
-      </div>
-      <div style={{display:"flex",gap:10}}>
-        {options.map(value=>(
-          <button key={value} onClick={()=>choose(value)} disabled={choice!==null} style={{
-            flex:1,
-            padding:"18px 8px",
-            background:choice===value?(value===result?`${M.ok}18`:`${M.warn}18`):M.panel,
-            border:`2px solid ${choice===value?(value===result?M.ok:M.warn):`${cor(value)}55`}`,
-            borderRadius:M.radius,
-            color:cor(value),
-            fontFamily:TF,
-            fontSize:14,
-            cursor:choice===null?"pointer":"default",
-          }}>
-            {fmtC(value)}
-          </button>
-        ))}
-      </div>
+      <NumberLine
+        a={a}
+        result={result}
+        mode="start"
+        sideChoice={choice}
+        onPickSide={choose}
+        pulseStart
+      />
       {choice!==null&&(
         <Card>
           <div style={{fontSize:15,color:correct?M.ok:M.warn,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-            {correct ? "Leitura correta da reta." : "Vamos revisar a chegada."}
+            {correct ? "Direcao correta." : "Vamos revisar a direcao."}
           </div>
           <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-            A reta termina em {fmtC(result)}.
+            {correctSide==="right" ? "O segundo numero leva a reta para a direita." : "O segundo numero leva a reta para a esquerda."}
           </div>
         </Card>
       )}
@@ -481,7 +482,7 @@ function ConfirmSlide({a,b,onCorrect,onWrong}) {
   )
 }
 
-function CompleteSlide({a,b,onCorrect,onWrong}) {
+function ArrivalSlide({a,b,onCorrect,onWrong}) {
   const result = a + b
   const [selected,setSelected] = useState(null)
   const [done,setDone] = useState(false)
@@ -497,34 +498,28 @@ function CompleteSlide({a,b,onCorrect,onWrong}) {
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      <Conta a={a} b={b} resultado={result} showResult={done && correct} />
-      <StepCard
-        step={1}
-        total={1}
-        title="Complete a reta"
-        text={`Comece em ${fmtC(a)}, acompanhe ${Math.abs(b)} ${Math.abs(b)===1?"passo":"passos"} e toque na chegada.`}
+      <Equation a={a} b={b} result={result} reveal={done && correct} />
+      <Prompt
+        kicker="DECISAO 2"
+        title="Toque na chegada"
+        text={`Comece em ${fmtC(a)}. Depois acompanhe ${Math.abs(b)} ${Math.abs(b)===1?"passo":"passos"} e toque no ponto final.`}
       />
       <NumberLine
         a={a}
         result={result}
+        mode="value"
         selected={selected}
-        showPath={done}
         showResult={done}
-        interactive={!done}
-        onSelect={choose}
+        interactiveValues={!done}
+        onPickValue={choose}
       />
-      {!done&&(
-        <div style={{textAlign:"center",fontSize:13,color:M.accent,fontFamily:BF,fontWeight:700}}>
-          Toque no ponto final da reta.
-        </div>
-      )}
       {done&&(
         <Card>
           <div style={{fontSize:15,color:correct?M.ok:M.warn,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-            {correct ? "Boa leitura da reta." : "A chegada precisa de ajuste."}
+            {correct ? "Chegada correta." : "A chegada precisa de ajuste."}
           </div>
           <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-            {correct ? `A chegada fica em ${fmtC(result)}.` : `A reta correta termina em ${fmtC(result)}.`}
+            A reta termina em {fmtC(result)}.
           </div>
         </Card>
       )}
@@ -537,13 +532,12 @@ function ExplainSlide({a,b,onCorrect,onWrong}) {
   const [choice,setChoice] = useState(null)
   const correctText = `Comeca em ${fmtC(a)} e anda ${Math.abs(b)} ${b>0?"para a direita":"para a esquerda"}.`
   const wrongText = `Comeca em ${fmtC(result)} e volta para ${fmtC(a)}.`
+  const options = [correctText, wrongText]
 
-  const options = useState(()=>[correctText, wrongText].sort(()=>Math.random()-.5))[0]
-
-  const choose = value => {
+  const choose = text => {
     if (choice!==null) return
-    setChoice(value)
-    if (value === correctText) onCorrect?.()
+    setChoice(text)
+    if (text === correctText) onCorrect?.()
     else onWrong?.()
   }
 
@@ -551,13 +545,12 @@ function ExplainSlide({a,b,onCorrect,onWrong}) {
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      <Conta a={a} b={b} resultado={result} showResult />
-      <NumberLine a={a} result={result} showPath showResult />
-      <StepCard
-        step={1}
-        total={1}
-        title="Explique com apoio"
-        text="Escolha a frase que descreve corretamente o percurso da reta."
+      <Equation a={a} b={b} result={result} reveal />
+      <NumberLine a={a} result={result} mode="result" showResult />
+      <Prompt
+        kicker="DECISAO 3"
+        title="Escolha a frase que explica a reta"
+        text="A frase correta precisa acompanhar o ponto de partida, a direcao e a chegada."
       />
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {options.map(text=>(
@@ -581,10 +574,10 @@ function ExplainSlide({a,b,onCorrect,onWrong}) {
       {choice!==null&&(
         <Card>
           <div style={{fontSize:15,color:correct?M.ok:M.warn,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-            {correct ? "Explicacao alinhada com a reta." : "A frase precisa acompanhar o percurso."}
+            {correct ? "Explicacao correta." : "A frase nao acompanha a reta."}
           </div>
           <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-            A conta {fmtC(a)} + {fmtC(b)} chega em {fmtC(result)}.
+            A conta {fmtC(a)} + {fmtC(b)} termina em {fmtC(result)}.
           </div>
         </Card>
       )}
@@ -597,10 +590,10 @@ function RetryDemo({a,b,onDone}) {
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       <Card>
         <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-          Vamos revisar esse passo com calma.
+          Vamos rever esse trecho com calma.
         </div>
         <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-          Primeiro observe a reta. Depois tente de novo.
+          Observe o ponto de partida, a direcao e a chegada antes de tentar de novo.
         </div>
       </Card>
       <ObserveSlide a={a} b={b} onDone={onDone}/>
@@ -608,8 +601,8 @@ function RetryDemo({a,b,onDone}) {
   )
 }
 
-function Bloco({mode,a,b,onLog,onUnlock}) {
-  const [tries,setTries] = useState(0)
+function ExerciseBlock({mode,a,b,onLog,onUnlock}) {
+  const [errors,setErrors] = useState(0)
   const [showRetry,setShowRetry] = useState(false)
   const [version,setVersion] = useState(0)
 
@@ -619,8 +612,8 @@ function Bloco({mode,a,b,onLog,onUnlock}) {
   }
 
   const wrong = () => {
-    const next = tries + 1
-    setTries(next)
+    const next = errors + 1
+    setErrors(next)
     onLog({ok:false})
     if (next >= 2) setShowRetry(true)
   }
@@ -631,40 +624,39 @@ function Bloco({mode,a,b,onLog,onUnlock}) {
         a={a}
         b={b}
         onDone={()=>{
+          setErrors(0)
           setShowRetry(false)
-          setTries(0)
           setVersion(v=>v+1)
         }}
       />
     )
   }
 
-  if (mode === "observe") return <ObserveSlide key={version} a={a} b={b} onDone={onUnlock} />
-  if (mode === "confirm") return <ConfirmSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong} />
-  if (mode === "complete") return <CompleteSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong} />
-  return <ExplainSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong} />
+  if (mode === "observe") return <ObserveSlide key={version} a={a} b={b} onDone={onUnlock}/>
+  if (mode === "direction") return <DirectionSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong}/>
+  if (mode === "arrival") return <ArrivalSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong}/>
+  return <ExplainSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong}/>
 }
 
-function SummaryRule() {
+function RuleSummary() {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      <Card>
-        <div style={{fontSize:11,color:M.accent,fontFamily:TF,marginBottom:10}}>REGRA VISUAL</div>
-        <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7}}>
-          Quando os dois numeros tem o mesmo sinal, a reta continua para o mesmo lado.
-        </div>
-      </Card>
+      <Prompt
+        kicker="REGRA VISUAL"
+        title="Mesmo sinal, mesmo lado"
+        text="Quando os dois numeros tem o mesmo sinal, a reta continua para o mesmo lado. O que muda e a distancia."
+      />
       <Card style={{display:"flex",flexDirection:"column",gap:8}}>
         {[[2,3], [4,4], [-2,-3], [-4,-4]].map(([a,b])=>(
           <div key={`${a}-${b}`} style={{
             background:`${cor(a+b)}10`,
-            border:`1px solid ${cor(a+b)}30`,
-            borderRadius:10,
+            border:`1px solid ${cor(a+b)}35`,
+            borderRadius:12,
             padding:"10px 12px",
+            textAlign:"center",
             fontFamily:TF,
             fontSize:12,
             color:cor(a+b),
-            textAlign:"center",
           }}>
             {fmtC(a)} + {fmtC(b)} = {fmtC(a+b)}
           </div>
@@ -682,47 +674,44 @@ export default function T7() {
 
   const sequences = {
     ensino: [
-      {title:"Visao geral do treino", kind:"info"},
+      {title:"Abertura do treino", kind:"introCard"},
       {title:"Observe um exemplo", kind:"observe", a:2, b:3},
-      {title:"Confirme a chegada", kind:"confirm", a:1, b:2},
-      {title:"Complete a reta", kind:"complete", a:2, b:2},
-      {title:"Explique com apoio", kind:"explain", a:3, b:4},
+      {title:"Escolha o lado", kind:"direction", a:1, b:2},
+      {title:"Toque na chegada", kind:"arrival", a:2, b:2},
+      {title:"Explique a reta", kind:"explain", a:3, b:4},
       {title:"Observe no lado negativo", kind:"observe", a:-2, b:-3},
-      {title:"Confirme no lado negativo", kind:"confirm", a:-1, b:-2},
-      {title:"Complete no lado negativo", kind:"complete", a:-2, b:-2},
+      {title:"Escolha o lado negativo", kind:"direction", a:-1, b:-2},
+      {title:"Toque na chegada negativa", kind:"arrival", a:-2, b:-2},
       {title:"Regra do mesmo sinal", kind:"summary"},
     ],
     pratica: [
-      {title:"Pratica 1", kind:"confirm", a:2, b:3},
-      {title:"Pratica 2", kind:"complete", a:3, b:3},
+      {title:"Pratica 1", kind:"direction", a:2, b:3},
+      {title:"Pratica 2", kind:"arrival", a:3, b:3},
       {title:"Pratica 3", kind:"explain", a:4, b:4},
-      {title:"Pratica 4", kind:"confirm", a:-2, b:-3},
-      {title:"Pratica 5", kind:"complete", a:-3, b:-3},
+      {title:"Pratica 4", kind:"direction", a:-2, b:-3},
+      {title:"Pratica 5", kind:"arrival", a:-3, b:-3},
       {title:"Pratica 6", kind:"explain", a:-4, b:-4},
     ],
     escola: [
       {title:"Modo escola", kind:"school"},
-      {title:"Leitura com numeros maiores", kind:"confirm", a:6, b:7},
-      {title:"Complete com numeros maiores", kind:"complete", a:-6, b:-7},
-      {title:"Explique com numeros maiores", kind:"explain", a:8, b:9},
+      {title:"Numeros maiores: lado", kind:"direction", a:6, b:7},
+      {title:"Numeros maiores: chegada", kind:"arrival", a:-6, b:-7},
+      {title:"Numeros maiores: explicacao", kind:"explain", a:8, b:9},
     ],
   }
 
   const currentList = sequences[scene] || []
   const current = currentList[index]
 
-  const resetUnlock = () => setUnlocked(false)
-
   const go = (nextScene, nextIndex = 0) => {
     setScene(nextScene)
     setIndex(nextIndex)
-    resetUnlock()
+    setUnlocked(false)
   }
 
   const next = () => {
-    resetUnlock()
-    const currentTotal = currentList.length
-    if (index + 1 < currentTotal) {
+    setUnlocked(false)
+    if (index + 1 < currentList.length) {
       setIndex(v=>v+1)
       return
     }
@@ -756,26 +745,26 @@ export default function T7() {
           </div>
 
           <Card style={{display:"flex",alignItems:"center",gap:14}}>
-            <img src={mikuImg} alt="Miku" style={{width:64,height:"auto",flexShrink:0}}/>
+            <img src={mikuImg} alt="guia visual" style={{width:58,height:"auto",flexShrink:0}}/>
             <div>
-              <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-                Treino guiado de soma com sinais iguais
+              <div style={{fontSize:15,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
+                Treino visual de soma com sinais iguais
               </div>
               <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-                Hoje o treino vai usar reta, passos visiveis e apoio curto em cada etapa.
+                Hoje o treino vai mostrar o percurso, pedir pequenas decisoes e usar a reta como apoio do comeco ao fim.
               </div>
             </div>
           </Card>
 
           <Card>
             <div style={{fontSize:13,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:10}}>
-              Antes de comecar:
+              Como o treino funciona:
             </div>
             {[
-              "vamos fazer um bloco por vez",
-              "cada bloco tem comeco, meio e fim visiveis",
-              "primeiro voce observa, depois responde",
-              "se travar, a reta mostra de novo",
+              "primeiro voce observa a reta",
+              "depois escolhe o lado correto",
+              "depois toca na chegada",
+              "por fim escolhe a frase que explica a conta",
             ].map((item, idx)=>(
               <div key={item} style={{
                 display:"flex",gap:10,alignItems:"center",padding:"8px 0",
@@ -787,12 +776,6 @@ export default function T7() {
             ))}
           </Card>
 
-          <Card style={{background:M.panel2}}>
-            <div style={{fontSize:12,color:M.muted,fontFamily:BF,lineHeight:1.7}}>
-              Meta do treino: entender a reta, confirmar a chegada, completar o percurso e explicar a conta sem depender de escrita longa.
-            </div>
-          </Card>
-
           <Btn label="Iniciar treino" onClick={()=>go("ensino")} />
         </div>
       </Tela>
@@ -800,47 +783,41 @@ export default function T7() {
   }
 
   if (scene === "fim") {
+    const filled = Math.max(1, Math.round((log.filter(item=>item.ok).length / Math.max(log.length,1)) * 5))
     return (
       <Tela>
         <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",gap:18}}>
-          <Card>
-            <div style={{fontSize:11,color:M.accent,fontFamily:TF,marginBottom:10}}>FECHAMENTO</div>
-            <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7}}>
-              O treino terminou. A reta foi usada para organizar a conta passo a passo e tornar a resposta mais visivel.
-            </div>
-          </Card>
-
+          <Prompt
+            kicker="ENCERRAMENTO"
+            title="Treino concluido"
+            text="A reta foi usada para mostrar o ponto de partida, a direcao, a chegada e a frase que explica a conta."
+          />
           <Card>
             <div style={{fontSize:11,color:M.accent,fontFamily:TF,marginBottom:10}}>DESEMPENHO</div>
             <div style={{fontSize:16,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:10}}>
               {desempenho()}
             </div>
-            <div style={{height:10,display:"flex",gap:8}}>
+            <div style={{display:"flex",gap:8}}>
               {Array.from({length:5},(_,i)=>(
                 <div key={i} style={{
                   flex:1,
+                  height:10,
                   borderRadius:99,
-                  background:i < Math.max(1, Math.round((log.filter(item=>item.ok).length / Math.max(log.length,1)) * 5)) ? M.accent : M.line,
+                  background:i < filled ? M.accent : M.line,
                 }}/>
               ))}
             </div>
           </Card>
-
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             <Btn
               label="Compartilhar resultado"
               color="#25D366"
               onClick={()=>window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(relatorio())}`,"_blank")}
             />
-            <Btn
-              label="Treinar de novo"
-              ghost
-              color={M.muted}
-              onClick={()=>{
-                setLog([])
-                go("intro")
-              }}
-            />
+            <Btn label="Treinar de novo" ghost color={M.muted} onClick={()=>{
+              setLog([])
+              go("intro")
+            }} />
           </div>
         </div>
       </Tela>
@@ -849,46 +826,43 @@ export default function T7() {
 
   return (
     <Tela>
-      <Prog index={index} total={currentList.length} />
+      <Progress index={index} total={currentList.length} />
 
       <div style={{fontSize:16,color:M.accent,fontFamily:BF,fontWeight:700,marginBottom:12}}>
         {current.title}
       </div>
 
       <div style={{flex:1}}>
-        {current.kind === "info" && (
+        {current.kind === "introCard" && (
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <Card>
-              <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
-                Estrutura do treino
-              </div>
+            <Prompt
+              kicker="ESTRUTURA"
+              title="Poucos passos, apoio constante"
+              text="Cada bloco mostra um pedaço da conta. Primeiro voce ve. Depois responde. Se travar, a reta mostra de novo."
+            />
+            <Card style={{background:M.panel2}}>
               <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-                Primeiro voce observa a reta. Depois confirma a chegada. Em seguida completa o percurso. So depois explica a conta.
+                Meta deste treino: transformar a conta em percurso visivel na reta, sem depender de escrita longa e sem pressa.
               </div>
             </Card>
-            <Btn label="Continuar" onClick={()=>{
-              setUnlocked(true)
-            }} />
+            <Btn label="Continuar" onClick={()=>setUnlocked(true)} />
           </div>
         )}
 
         {current.kind === "summary" && (
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <SummaryRule />
+            <RuleSummary />
             <Btn label="Continuar" onClick={()=>setUnlocked(true)} />
           </div>
         )}
 
         {current.kind === "school" && (
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <Card>
-              <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
-                Quando os numeros aumentam
-              </div>
-              <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-                A estrategia nao muda. O apoio continua sendo o mesmo: ponto de partida, deslocamento e chegada.
-              </div>
-            </Card>
+            <Prompt
+              kicker="MODO ESCOLA"
+              title="Quando os numeros aumentam"
+              text="A estrategia continua igual: ponto de partida, direcao e chegada. O apoio visual nao muda."
+            />
             <Card style={{display:"flex",flexDirection:"column",gap:8}}>
               <div style={{fontFamily:TF,fontSize:12,color:M.pos,textAlign:"center"}}>(+6) + (+7) = (+13)</div>
               <div style={{fontFamily:TF,fontSize:12,color:M.neg,textAlign:"center"}}>(-6) + (-7) = (-13)</div>
@@ -897,18 +871,18 @@ export default function T7() {
           </div>
         )}
 
-        {["observe","confirm","complete","explain"].includes(current.kind) && (
-          <Bloco
+        {["observe","direction","arrival","explain"].includes(current.kind) && (
+          <ExerciseBlock
+            mode={current.kind}
             a={current.a}
             b={current.b}
-            mode={current.kind}
             onLog={entry=>setLog(items=>[...items, entry])}
             onUnlock={()=>setUnlocked(true)}
           />
         )}
       </div>
 
-      {unlocked && (
+      {unlocked&&(
         <div style={{marginTop:14}}>
           <Btn
             label={index + 1 < currentList.length ? "Proximo" : scene === "ensino" ? "Ir para pratica" : scene === "pratica" ? "Ir para modo escola" : "Encerrar"}
