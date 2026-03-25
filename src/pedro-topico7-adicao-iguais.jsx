@@ -123,14 +123,14 @@ function Prog({n,total}) {
    Numeros visiveis, sem sobreposicao
    ================================================================ */
 function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
-               arrastando=false,containerRef,onIniciar}) {
+               arrastando=false,corrigindo=false,containerRef,onIniciar}) {
   const janMin = Math.min(a,resultado,0)-2
   const janMax = Math.max(a,resultado,0)+2
   const span   = janMax-janMin
   const pct    = v => ((v-janMin)/span)*100
   const nums   = Array.from({length:janMax-janMin+1},(_,i)=>janMin+i)
   const LINHA  = "64%"
-  const MIKU_OFFSET_X = 14
+  const MIKU_OFFSET_X = 0
   const MIKU_OFFSET_Y = 6
 
   /* Regua sem sobreposicao */
@@ -236,7 +236,11 @@ function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
           position:"absolute",left:`${pct(pos)}%`,top:LINHA,
           transform:`translate(calc(-50% + ${MIKU_OFFSET_X}px), calc(-100% + ${MIKU_OFFSET_Y}px))`,
           zIndex:6,pointerEvents:"none",
-          transition:arrastando?"none":"left .08s ease-out",
+          transition:arrastando
+            ?"none"
+            :corrigindo
+              ?"left .55s ease-in-out"
+              :"left .08s ease-out",
           filter:solto&&acertou
             ?`drop-shadow(0 0 10px ${M.teal}) drop-shadow(0 0 18px ${M.pink}50)`
             :`drop-shadow(0 0 5px ${M.teal}50)`,
@@ -298,6 +302,9 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
   const [moveu,  setMoveu]  = useState(false)
   const [rastros,setRastros]= useState([])
   const [arrastando, setArrastando] = useState(false)
+  const [corrigindo, setCorrigindo] = useState(false)
+  const [erroCorrigido, setErroCorrigido] = useState(false)
+  const corrigeRef = useRef(null)
 
   const calcPos = useCallback(clientX => {
     if (!containerRef.current) return posRef.current
@@ -315,8 +322,22 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
     const ok = posicaoFinal === resultado
     setSolto(true)
     setAcertou(ok)
-    if (ok) onAcertou?.()
-    else    onErrou?.()
+    if (ok) {
+      onAcertou?.()
+      return
+    }
+
+    setErroCorrigido(false)
+    setCorrigindo(true)
+    corrigeRef.current = window.setTimeout(() => {
+      posRef.current = resultado
+      setPos(resultado)
+      setErroCorrigido(true)
+      corrigeRef.current = window.setTimeout(() => {
+        setCorrigindo(false)
+      }, 600)
+    }, 220)
+    onErrou?.()
   }, [resultado, onAcertou, onErrou])
 
   useEffect(()=>{
@@ -340,6 +361,7 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
       window.removeEventListener("mouseup",mu)
       window.removeEventListener("touchmove",tm)
       window.removeEventListener("touchend",tu)
+      if (corrigeRef.current) clearTimeout(corrigeRef.current)
     }
   }, [calcPos, soltar])
 
@@ -380,7 +402,7 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
       <Reta a={a} resultado={resultado} pos={pos}
         solto={solto} acertou={acertou}
         rastros={rastros} moveu={moveu}
-        arrastando={arrastando}
+        arrastando={arrastando} corrigindo={corrigindo}
         containerRef={containerRef} onIniciar={iniciar}/>
 
       {!moveu&&!solto&&(
@@ -410,10 +432,12 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
             ) : (
               <div>
                 <div style={{fontSize:15,color:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>
-                  Quase la!
+                  Tudo bem, vamos juntos!
                 </div>
                 <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.5}}>
-                  Eu te ensino, Pedro. Ve onde eu cheguei na reta.
+                  {erroCorrigido
+                    ? `Agora ficou mais facil de ver: o resultado e ${fmtC(resultado)}.`
+                    : "Vamos olhar juntos onde eu vou parar na reta."}
                 </div>
               </div>
             )}
@@ -511,9 +535,9 @@ function MultiplaEscolha({parcelas, onAcertou, onErrou}) {
               </div>
             ):(
               <div>
-                <div style={{fontSize:15,color:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>Quase la!</div>
+                <div style={{fontSize:15,color:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>Tudo bem, vamos juntos!</div>
                 <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.5}}>
-                  Eu te ensino, Pedro. O resultado e {fmtC(resultado)}.
+                  Agora ficou mais facil de ver: o resultado e {fmtC(resultado)}.
                 </div>
               </div>
             )}
@@ -544,20 +568,20 @@ function Demo({parcelas, onFim}) {
     setFase("andando")
 
     /* Passo 1: informa ponto de partida */
-    setFala(`Começa em ${fmtC(a)}.`)
+    setFala(`Eu começo em ${fmtC(a)}.`)
     tmr.current = setTimeout(()=>{
 
       /* Passo 2: informa quantos passos */
-      setFala(`Anda ${Math.abs(b)} ${Math.abs(b)===1?"passo":"passos"} ${b>0?"para o lado positivo.":"para o lado negativo."}`)
+      setFala(`Agora eu ando ${Math.abs(b)} ${Math.abs(b)===1?"passo":"passos"} ${b>0?"para o lado positivo.":"para o lado negativo."}`)
       tmr.current = setTimeout(()=>{
 
         /* Passo 3: Miku anda */
-        setFala("Miku caminha...")
+        setFala("Agora eu vou caminhando...")
         const dir = Math.sign(b), n = Math.abs(b)
         let i = 0
         const andar = () => {
           if (i>=n) {
-            setFala(`Chegou em ${fmtC(resultado)}.`)
+            setFala(`Eu cheguei em ${fmtC(resultado)}.`)
             setFase("fim")
             onFim?.()
             return
@@ -946,7 +970,7 @@ export default function T7() {
           </div>
           <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7}}>
             "Oi, Pedro! Hoje voce vai aprender a somar numeros com o mesmo sinal.
-            Voce me arrasta na reta e descobre onde eu chego.
+            Voce me arrasta na reta e descobre onde eu vou parar.
             A reta e sua calculadora!"
           </div>
         </Card>
