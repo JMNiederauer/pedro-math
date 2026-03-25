@@ -127,7 +127,8 @@ function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
   const janMin = Math.min(a,resultado,0)-2
   const janMax = Math.max(a,resultado,0)+2
   const span   = janMax-janMin
-  const pct    = v => ((v-janMin)/span)*100
+  const casas  = span+1
+  const pct    = v => (((v-janMin)+0.5)/casas)*100
   const nums   = Array.from({length:janMax-janMin+1},(_,i)=>janMin+i)
   const LINHA  = "64%"
   const MIKU_OFFSET_X = 0
@@ -423,7 +424,7 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
             {acertou ? (
               <div>
                 <div style={{fontSize:15,color:M.green,fontFamily:BF,fontWeight:700,marginBottom:4}}>
-                  Certo!
+                  Boa resposta.
                 </div>
                 <div style={{fontSize:13,color:M.muted,fontFamily:BF}}>
                   {fmtC(a)} + {fmtC(parcelas[1])} = {fmtC(resultado)}
@@ -432,7 +433,7 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
             ) : (
               <div>
                 <div style={{fontSize:15,color:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>
-                  Tudo bem, vamos juntos!
+                  Vamos ajustar juntos.
                 </div>
                 <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.5}}>
                   {erroCorrigido
@@ -498,7 +499,7 @@ function MultiplaEscolha({parcelas, onAcertou, onErrou}) {
       </div>
 
       <div style={{fontSize:14,color:M.text,fontFamily:BF,textAlign:"center",fontWeight:600}}>
-        Qual e o resultado?
+        Qual resposta combina com a reta?
       </div>
 
       <div style={{display:"flex",gap:10}}>
@@ -530,12 +531,12 @@ function MultiplaEscolha({parcelas, onAcertou, onErrou}) {
               filter:`drop-shadow(0 0 6px ${M.teal}70)`}}/>
             {acertou?(
               <div>
-                <div style={{fontSize:15,color:M.green,fontFamily:BF,fontWeight:700,marginBottom:4}}>Certo!</div>
+                <div style={{fontSize:15,color:M.green,fontFamily:BF,fontWeight:700,marginBottom:4}}>Boa resposta.</div>
                 <div style={{fontSize:13,color:M.muted,fontFamily:BF}}>{fmtC(a)} + {fmtC(b)} = {fmtC(resultado)}</div>
               </div>
             ):(
               <div>
-                <div style={{fontSize:15,color:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>Tudo bem, vamos juntos!</div>
+                <div style={{fontSize:15,color:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>Vamos ajustar juntos.</div>
                 <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.5}}>
                   Agora ficou mais facil de ver: o resultado e {fmtC(resultado)}.
                 </div>
@@ -637,7 +638,7 @@ function Demo({parcelas, onFim}) {
           </>
         ):(
           <span style={{fontSize:13,color:M.muted,fontFamily:BF}}>
-            Toca para ver Miku demonstrar.
+            Toca para ver a demonstracao na reta.
           </span>
         )}
       </div>
@@ -654,17 +655,25 @@ function Demo({parcelas, onFim}) {
             background:M.teal+"20",border:`1.5px solid ${M.teal}`,
             borderRadius:10,cursor:"pointer",
             color:M.teal,fontFamily:TF,fontSize:10,letterSpacing:.5,
-          }}>MIKU, MOSTRA!</button>
+          }}>VER DEMONSTRACAO</button>
         )}
         {fase==="andando"&&(
           <div style={{textAlign:"center",fontSize:13,color:M.muted,
             fontFamily:BF,animation:"blink 1s infinite"}}>
-            Miku esta andando...
+            Estou mostrando o caminho...
           </div>
         )}
         {fase==="fim"&&(
-          <div style={{textAlign:"center",fontSize:13,color:M.teal,fontFamily:BF,fontWeight:600}}>
-            {fmtC(a)} + {fmtC(b)} = {fmtC(resultado)}
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{textAlign:"center",fontSize:13,color:M.teal,fontFamily:BF,fontWeight:600}}>
+              {fmtC(a)} + {fmtC(b)} = {fmtC(resultado)}
+            </div>
+            <button onClick={()=>{ setPos(a); setRastros([]); setFala(""); setFase("aguarda") }} style={{
+              width:"100%",padding:"10px 0",
+              background:"transparent",border:`1.5px solid ${M.teal}50`,
+              borderRadius:10,cursor:"pointer",
+              color:M.teal,fontFamily:TF,fontSize:10,letterSpacing:.5,
+            }}>VER DE NOVO</button>
           </div>
         )}
       </div>
@@ -698,7 +707,6 @@ function SlideAdaptativo({parcelas,tipo="arrastar",onLog,onLiberar}) {
     const novos = errosConsec+1
     setErrosConsec(novos)
     onLog({ok:false})
-    liberar()
     if (novos>=2) {
       setMostraDemo(true)
       setDemoFeita(false)
@@ -722,7 +730,7 @@ function SlideAdaptativo({parcelas,tipo="arrastar",onLog,onLiberar}) {
         padding:"10px 14px",fontSize:14,
         color:M.teal,fontFamily:BF,lineHeight:1.5,
       }}>
-        Vamos ver de novo juntos, Pedro.
+        Vamos rever esse passo com calma.
       </div>
       <Demo parcelas={parcelas} onFim={demoTerminou}/>
     </div>
@@ -743,14 +751,14 @@ function SlideAdaptativo({parcelas,tipo="arrastar",onLog,onLiberar}) {
           padding:"10px 14px",fontSize:14,
           color:M.green,fontFamily:BF,
         }}>
-          Agora e sua vez de novo.
+          Agora tenta outra vez usando a reta como apoio.
         </div>
       )}
       {comp}
       {!tentou&&(
         <div style={{textAlign:"center",fontSize:12,color:M.pink,
           fontFamily:BF,animation:"blink 1s infinite",fontWeight:600}}>
-          {tipo==="arrastar"?"Arrasta a Miku para continuar":"Toca para continuar"}
+          {tipo==="arrastar"?"Arrasta ate a posicao correta":"Toca na resposta correta"}
         </div>
       )}
     </div>
@@ -779,11 +787,19 @@ export default function T7() {
   const stars = () => !log.length?5:
     Math.max(1,Math.round(log.filter(l=>l.ok).length/log.length*5))
 
+  const desempenho = () => {
+    const s = stars()
+    if (s>=5) return "Dominio muito bom"
+    if (s>=4) return "Bom dominio"
+    if (s>=3) return "Dominio em progresso"
+    return "Treino importante"
+  }
+
   const rel = () => {
     const oks=log.filter(l=>l.ok).length
     const pct=log.length?Math.round(oks/log.length*100):100
     const now=new Date()
-    return `Relatorio Pedro\n${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}\nT7: Adicao Sinais Iguais\n${oks}/${log.length} (${pct}%) ${"estrela ".repeat(stars())}`
+    return `Relatorio Pedro\n${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}\nT7: Adicao Sinais Iguais\n${oks}/${log.length} (${pct}%)\nDesempenho: ${desempenho()}`
   }
 
   /* ── ENSINO ─────────────────────────────────────────────────── */
@@ -795,7 +811,7 @@ export default function T7() {
       render:()=>(
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <div style={{fontSize:14,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-            Miku começa no primeiro numero, anda os passos do segundo e para no resultado.
+            Eu começo no primeiro numero, ando os passos do segundo e paro no resultado.
           </div>
           <Demo parcelas={[3,4]} onFim={()=>setBloq(false)}/>
         </div>
@@ -806,7 +822,7 @@ export default function T7() {
        Laudo: memoria operacional e aritmética frágeis
        Comeca em [1,2] — um passo de cada vez */
     {
-      titulo:"Sua vez — arrasta a Miku",
+      titulo:"Treino 1 — arrasta na reta",
       render:()=>(
         <SlideAdaptativo parcelas={[1,2]} tipo="arrastar"
           onLog={e=>setLog(p=>[...p,e])}
@@ -816,7 +832,7 @@ export default function T7() {
 
     /* 2 - Mais um pequeno */
     {
-      titulo:"Mais um",
+      titulo:"Treino 2 — mesmo formato",
       render:()=>(
         <SlideAdaptativo parcelas={[2,2]} tipo="arrastar"
           onLog={e=>setLog(p=>[...p,e])}
@@ -827,7 +843,7 @@ export default function T7() {
     /* 3 - Multipla escolha — muda tipo de resposta
        Laudo: nao depender exclusivamente de arrastar */
     {
-      titulo:"Agora toca no resultado",
+      titulo:"Treino 3 — toca na resposta",
       render:()=>(
         <SlideAdaptativo parcelas={[3,4]} tipo="escolha"
           onLog={e=>setLog(p=>[...p,e])}
@@ -838,13 +854,13 @@ export default function T7() {
     /* 4 - Demo negativos — aviso + mediacao ANTES
        Laudo: inibitório baixo — confronto visual antes */
     {
-      titulo:"Agora com negativos",
+      titulo:"Treino 4 — agora com negativos",
       render:()=>(
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Card glow={M.neg} style={{padding:"12px 14px"}}>
             <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.6}}>
               Dois negativos juntos ficam ainda mais negativos.
-              Miku vai mais fundo. Ve:
+              Eu vou mais fundo na reta. Ve:
             </div>
           </Card>
           <Demo parcelas={[-2,-3]} onFim={()=>setBloq(false)}/>
@@ -854,7 +870,7 @@ export default function T7() {
 
     /* 5 - Arrastar negativo pequeno */
     {
-      titulo:"Arrasta a Miku",
+      titulo:"Treino 5 — arrasta na reta",
       render:()=>(
         <SlideAdaptativo parcelas={[-1,-2]} tipo="arrastar"
           onLog={e=>setLog(p=>[...p,e])}
@@ -864,7 +880,7 @@ export default function T7() {
 
     /* 6 - Escolha negativo */
     {
-      titulo:"Toca no resultado",
+      titulo:"Treino 6 — toca na resposta",
       render:()=>(
         <SlideAdaptativo parcelas={[-2,-3]} tipo="escolha"
           onLog={e=>setLog(p=>[...p,e])}
@@ -875,7 +891,7 @@ export default function T7() {
     /* 7 - Padrao tem nome — DEPOIS da experiencia
        Laudo: flex. cognitiva frágil — regra vem depois do padrao */
     {
-      titulo:"O padrao tem nome",
+      titulo:"Regra do sinal igual",
       render:()=>(
         <Card glow={M.teal} style={{padding:"16px 14px"}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
@@ -887,7 +903,7 @@ export default function T7() {
                 ADICAO — SINAIS IGUAIS
               </div>
               <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.6}}>
-                Miku anda sempre na mesma direcao.
+                Eu ando sempre na mesma direcao.
                 O resultado tem o mesmo sinal e fica mais longe do zero.
               </div>
             </div>
@@ -916,28 +932,28 @@ export default function T7() {
 
   /* ── DESCOBERTA — progressao gradual ────────────────────────── */
   const DESC = [
-    {ps:[2,3],t:"arrastar"}, {ps:[-2,-3],t:"escolha"},
-    {ps:[3,4],t:"escolha"},  {ps:[-3,-4],t:"arrastar"},
-    {ps:[4,5],t:"arrastar"}, {ps:[-4,-5],t:"escolha"},
-    {ps:[5,4],t:"escolha"},  {ps:[-5,-4],t:"arrastar"},
+    {ps:[2,3],t:"arrastar"}, {ps:[3,3],t:"arrastar"},
+    {ps:[-2,-3],t:"escolha"}, {ps:[-3,-3],t:"escolha"},
+    {ps:[4,4],t:"arrastar"}, {ps:[5,4],t:"arrastar"},
+    {ps:[-4,-4],t:"escolha"}, {ps:[-5,-4],t:"escolha"},
   ]
 
   /* ── FORMALIZACAO — nivel prova ──────────────────────────────── */
   const FORM = [
     {
-      tipo:"info",titulo:"Na prova",
+      tipo:"info",titulo:"Modo escola",
       itens:[
         {c:M.pos,t:"(+a) + (+b)",
          d:"Resultado positivo. Fica mais longe do zero no lado positivo.",
-         ex:"(+8)+(+9)=+17     (+12)+(+13)=+25"},
+         ex:"(+6)+(+7)=+13     (+8)+(+9)=+17"},
         {c:M.neg,t:"(-a) + (-b)",
          d:"Resultado negativo. Fica mais longe do zero no lado negativo.",
-         ex:"(-9)+(-8)=-17     (-15)+(-8)=-23"},
+         ex:"(-6)+(-7)=-13     (-8)+(-9)=-17"},
       ],
-      obs:"Usa a reta. Onde Miku para e a resposta.",
+      obs:"Usa a reta como apoio. Onde eu paro e a resposta.",
     },
-    {ps:[8,9],t:"arrastar"},   {ps:[-9,-8],t:"escolha"},
-    {ps:[12,13],t:"escolha"},  {ps:[-15,-8],t:"arrastar"},
+    {ps:[6,7],t:"arrastar"},   {ps:[-6,-7],t:"escolha"},
+    {ps:[8,9],t:"escolha"},    {ps:[-8,-9],t:"arrastar"},
   ]
 
   /* ── RENDERS ─────────────────────────────────────────────────── */
@@ -969,7 +985,7 @@ export default function T7() {
             MIKU FALA:
           </div>
           <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7}}>
-            "Oi, Pedro! Hoje voce vai aprender a somar numeros com o mesmo sinal.
+            "Pedro, hoje voce vai treinar soma com numeros do mesmo sinal.
             Voce me arrasta na reta e descobre onde eu vou parar.
             A reta e sua calculadora!"
           </div>
@@ -979,7 +995,7 @@ export default function T7() {
           <div style={{fontSize:13,color:M.muted,fontFamily:BF,marginBottom:10,fontWeight:600}}>
             Hoje voce vai aprender:
           </div>
-          {["Somar dois numeros positivos","Somar dois numeros negativos","Resolver contas de prova"].map((t,i)=>(
+          {["Somar dois numeros positivos","Somar dois numeros negativos","Resolver contas com apoio da reta"].map((t,i)=>(
             <div key={i} style={{
               display:"flex",alignItems:"center",gap:10,padding:"8px 0",
               borderBottom:i<2?`1px solid ${M.brd}`:"none",
@@ -991,7 +1007,7 @@ export default function T7() {
         </Card>
 
         <div style={{width:"100%"}}>
-          <Btn label="Comecar com Miku" onClick={()=>ir("ensino")}/>
+          <Btn label="Iniciar treino" onClick={()=>ir("ensino")}/>
         </div>
       </div>
     </Tela>
@@ -999,7 +1015,7 @@ export default function T7() {
 
   if (cena==="ensino") {
     const sl=ENSINO[idx]
-    const ehInfo = sl.titulo==="O padrao tem nome"
+    const ehInfo = sl.titulo==="Regra do sinal igual"
     return (
       <Tela>
         <Prog n={idx} total={ENSINO.length}/>
@@ -1094,18 +1110,30 @@ export default function T7() {
         <Card glow={M.teal} style={{width:"100%",padding:"14px 16px"}}>
           <div style={{fontSize:11,color:M.teal,fontFamily:TF,marginBottom:10}}>MIKU FALA:</div>
           <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7}}>
-            "Muito bem, Pedro! Parabens por completar o bloco.
-            Voce aprendeu a somar com sinais iguais usando a reta.
-            Isso cai na prova!"
+            "Bom trabalho, Pedro.
+            Voce treinou soma com sinais iguais usando a reta.
+            Quando isso aparecer na escola, a reta pode te ajudar a pensar."
           </div>
         </Card>
 
-        <div style={{fontSize:36,letterSpacing:4}}>{"⭐".repeat(stars())}</div>
+        <Card style={{width:"100%",padding:"12px 14px"}}>
+          <div style={{fontSize:11,color:M.teal,fontFamily:TF,marginBottom:8}}>DESEMPENHO</div>
+          <div style={{fontSize:16,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>{desempenho()}</div>
+          <div style={{display:"flex",gap:8}}>
+            {Array.from({length:5},(_,i)=>(
+              <div key={i} style={{
+                flex:1,height:10,borderRadius:999,
+                background:i<stars()?M.teal:M.brd,
+                boxShadow:i<stars()?`0 0 10px ${M.teal}50`:"none",
+              }}/>
+            ))}
+          </div>
+        </Card>
 
         <div style={{width:"100%",display:"flex",flexDirection:"column",gap:10}}>
-          <Btn label="Avisar mamae" c="#25D366"
+          <Btn label="Compartilhar resultado" c="#25D366"
             onClick={()=>window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(rel())}`,"_blank")}/>
-          <Btn label="Fazer de novo" c={M.gray} ghost
+          <Btn label="Treinar de novo" c={M.gray} ghost
             onClick={()=>{setLog([]);ir("intro")}}/>
         </div>
       </div>
