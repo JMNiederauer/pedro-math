@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import mikuImg from "./hatsune-miku-png.png"
 
 /* ================================================================
@@ -123,7 +123,8 @@ function Prog({n,total}) {
    Numeros visiveis, sem sobreposicao
    ================================================================ */
 function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
-               arrastando=false,corrigindo=false,containerRef,onIniciar}) {
+               arrastando=false,corrigindo=false,containerRef,onIniciar,
+               selecionavel=false,onEscolherNumero,selecionado=null}) {
   const janMin = Math.min(a,resultado,0)-2
   const janMax = Math.max(a,resultado,0)+2
   const span   = janMax-janMin
@@ -136,6 +137,7 @@ function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
 
   /* Regua sem sobreposicao */
   const mostrar = n => {
+    if (selecionavel) return true
     if (n===0||n===a||n===resultado) return true
     if (span<=10) return true
     if (span<=16) return n%2===0
@@ -217,6 +219,17 @@ function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
           border:`2px dashed ${cor(a)}70`,zIndex:2,
         }}/>
 
+        {/* Selecao manual da resposta */}
+        {selecionado!==null&&!solto&&(
+          <div style={{
+            position:"absolute",left:`${pct(selecionado)}%`,top:LINHA,
+            transform:"translate(-50%,-50%)",
+            width:30,height:30,borderRadius:"50%",
+            border:`2px solid ${M.teal}`,background:M.teal+"12",
+            boxShadow:`0 0 10px ${M.teal}40`,zIndex:4,
+          }}/>
+        )}
+
         {/* Resultado — aparece ao soltar */}
         {solto&&(
           <div style={{
@@ -264,13 +277,25 @@ function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
       }}>
         {nums.map(n=>{
           const dest = n===a||n===resultado||(solto&&n===pos)
+          const style = {
+            flex:1,textAlign:"center",
+            fontSize:dest||n===selecionado?12:9,
+            color:n===a?cor(a):n===resultado&&solto?cor(resultado):n===selecionado?M.teal:n===0?M.teal:M.muted,
+            fontFamily:TF,lineHeight:2.2,
+          }
+          if (selecionavel) {
+            return (
+              <button key={n} onClick={()=>onEscolherNumero?.(n)} disabled={solto}
+                style={{
+                  ...style,padding:0,background:"transparent",border:"none",
+                  cursor:solto?"default":"pointer",
+                }}>
+                {mostrar(n)?(n===0?"0":fmt(n)):""}
+              </button>
+            )
+          }
           return (
-            <div key={n} style={{
-              flex:1,textAlign:"center",
-              fontSize:dest?12:9,
-              color:n===a?cor(a):n===resultado&&solto?cor(resultado):n===0?M.teal:M.muted,
-              fontFamily:TF,lineHeight:2.2,
-            }}>
+            <div key={n} style={style}>
               {mostrar(n)?(n===0?"0":fmt(n)):""}
             </div>
           )
@@ -281,47 +306,37 @@ function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
 }
 
 /* ================================================================
-   COMPONENTE DE ARRASTAR — unico, com posRef correto
-   BUG FIX: posRef.current atualiza em tempo real.
-   soltar() usa posRef.current, nunca o state pos (que e assincrono).
+   COMPLETAR NA RETA — toque na posicao final
+   Menor carga motora e menor custo executivo que arrastar.
    ================================================================ */
-function Arrastar({parcelas, onAcertou, onErrou}) {
+function CompletarReta({parcelas, onAcertou, onErrou}) {
   const resultado    = parcelas.reduce((s,n)=>s+n,0)
   const a            = parcelas[0]
   const b            = parcelas[1]
-  const containerRef = useRef(null)
-  const estaArrastando = useRef(false)
-  const posRef       = useRef(a)  /* SEMPRE ATUALIZADO — evita stale closure */
-
-  const janMin = Math.min(a,resultado,0)-2
-  const janMax = Math.max(a,resultado,0)+2
-  const span   = janMax-janMin
-
   const [pos,    setPos]    = useState(a)
   const [solto,  setSolto]  = useState(false)
   const [acertou,setAcertou]= useState(null)
   const [moveu,  setMoveu]  = useState(false)
   const [rastros,setRastros]= useState([])
-  const [arrastando, setArrastando] = useState(false)
   const [corrigindo, setCorrigindo] = useState(false)
   const [erroCorrigido, setErroCorrigido] = useState(false)
+  const [selecionado, setSelecionado] = useState(null)
   const corrigeRef = useRef(null)
 
-  const calcPos = useCallback(clientX => {
-    if (!containerRef.current) return posRef.current
-    const {left,width} = containerRef.current.getBoundingClientRect()
-    return Math.max(janMin, Math.min(janMax,
-      Math.round(janMin + ((clientX-left)/width)*span)))
-  }, [janMin,janMax,span])
+  const montarRastros = destino => {
+    const dir = Math.sign(destino-a) || 0
+    const total = Math.abs(destino-a)
+    return Array.from({length:total},(_,i)=>a+dir*i)
+  }
 
-  /* SOLTAR: usa posRef.current — sem closure stale */
-  const soltar = useCallback(()=>{
-    if (!estaArrastando.current) return
-    estaArrastando.current = false
-    setArrastando(false)
-    const posicaoFinal = posRef.current
-    const ok = posicaoFinal === resultado
+  const escolherNumero = posicaoFinal => {
+    if (solto) return
+    setSelecionado(posicaoFinal)
+    setPos(posicaoFinal)
+    setMoveu(true)
+    setRastros(montarRastros(posicaoFinal))
     setSolto(true)
+    const ok = posicaoFinal === resultado
     setAcertou(ok)
     if (ok) {
       onAcertou?.()
@@ -331,50 +346,21 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
     setErroCorrigido(false)
     setCorrigindo(true)
     corrigeRef.current = window.setTimeout(() => {
-      posRef.current = resultado
       setPos(resultado)
+      setRastros(montarRastros(resultado))
       setErroCorrigido(true)
       corrigeRef.current = window.setTimeout(() => {
         setCorrigindo(false)
       }, 600)
     }, 220)
     onErrou?.()
-  }, [resultado, onAcertou, onErrou])
+  }
 
   useEffect(()=>{
-    const mover = clientX => {
-      if (!estaArrastando.current) return
-      const nova = calcPos(clientX)
-      posRef.current = nova    /* atualiza ref ANTES do state */
-      setPos(nova)
-      setRastros(p => p.includes(nova)?p:[...p,nova])
-    }
-    const mm = e => mover(e.clientX)
-    const tm = e => { e.preventDefault(); mover(e.touches[0].clientX) }
-    const mu = () => soltar()
-    const tu = () => soltar()
-    window.addEventListener("mousemove",mm)
-    window.addEventListener("mouseup",mu)
-    window.addEventListener("touchmove",tm,{passive:false})
-    window.addEventListener("touchend",tu)
     return ()=>{
-      window.removeEventListener("mousemove",mm)
-      window.removeEventListener("mouseup",mu)
-      window.removeEventListener("touchmove",tm)
-      window.removeEventListener("touchend",tu)
       if (corrigeRef.current) clearTimeout(corrigeRef.current)
     }
-  }, [calcPos, soltar])
-
-  const iniciar = clientX => {
-    if (solto) return
-    estaArrastando.current = true
-    setArrastando(true)
-    setMoveu(true)
-    const nova = calcPos(clientX)
-    posRef.current = nova
-    setPos(nova)
-  }
+  }, [])
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -400,17 +386,33 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
         }}>{solto?fmtC(resultado):"?"}</div>
       </div>
 
+      <Card style={{padding:"10px 12px",background:M.card2}}>
+        <div style={{fontSize:13,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
+          Use a reta em 3 passos:
+        </div>
+        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+          1. Comece em {fmtC(a)}.
+        </div>
+        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+          2. Ande {Math.abs(b)} {Math.abs(b)===1?"passo":"passos"} {b>0?"para a direita.":"para a esquerda."}
+        </div>
+        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+          3. Toque na posicao final da reta.
+        </div>
+      </Card>
+
       <Reta a={a} resultado={resultado} pos={pos}
         solto={solto} acertou={acertou}
         rastros={rastros} moveu={moveu}
-        arrastando={arrastando} corrigindo={corrigindo}
-        containerRef={containerRef} onIniciar={iniciar}/>
+        corrigindo={corrigindo} selecionavel
+        selecionado={selecionado}
+        onEscolherNumero={escolherNumero}/>
 
       {!moveu&&!solto&&(
         <div style={{textAlign:"center",fontSize:13,color:M.teal,
           fontFamily:BF,fontWeight:600,
           animation:"blink 1.2s ease-in-out infinite"}}>
-          Arrasta a Miku ate o resultado
+          Toque no ponto final da reta.
         </div>
       )}
 
@@ -442,6 +444,92 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
                 </div>
               </div>
             )}
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+/* ================================================================
+   CONFIRMACAO GUIADA — ve a reta e confirma o resultado
+   ================================================================ */
+function ConfirmacaoReta({parcelas, onAcertou, onErrou}) {
+  const resultado = parcelas.reduce((s,n)=>s+n,0)
+  const a = parcelas[0], b = parcelas[1]
+  const [escolha, setEscolha] = useState(null)
+
+  const opcoes = useState(()=>{
+    const distrator = resultado + (resultado>=0?-1:1)
+    return [resultado,distrator].sort(()=>Math.random()-.5)
+  })[0]
+
+  const escolher = valor => {
+    if (escolha!==null) return
+    setEscolha(valor)
+    if (valor===resultado) onAcertou?.()
+    else onErrou?.()
+  }
+
+  const acertou = escolha===resultado
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      <Card style={{padding:"10px 12px",background:M.card2}}>
+        <div style={{fontSize:13,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
+          Leia a reta antes de responder:
+        </div>
+        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+          Comece em {fmtC(a)} e acompanhe {Math.abs(b)} {Math.abs(b)===1?"passo":"passos"} {b>0?"para a direita.":"para a esquerda."}
+        </div>
+      </Card>
+
+      <div style={{
+        background:M.card2,borderRadius:M.r,
+        border:`1.5px solid ${M.teal}30`,padding:"12px 14px",
+        display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+      }}>
+        <span style={{fontSize:20,color:cor(a),fontFamily:TF}}>{fmtC(a)}</span>
+        <span style={{fontSize:16,color:M.teal,fontFamily:TF}}>+</span>
+        <span style={{fontSize:20,color:cor(b),fontFamily:TF}}>{fmtC(b)}</span>
+        <span style={{fontSize:16,color:M.teal,fontFamily:TF}}>=</span>
+        <div style={{
+          minWidth:56,padding:"5px 10px",textAlign:"center",
+          borderRadius:8,border:`1.5px solid ${M.brd}`,
+          background:M.brd+"40",color:M.muted,
+          fontFamily:TF,fontSize:20,
+        }}>?</div>
+      </div>
+
+      <Reta a={a} resultado={resultado} pos={resultado}
+        solto={true} acertou={true}
+        rastros={Array.from({length:Math.abs(resultado-a)},(_,i)=>a+Math.sign(resultado-a)*i)}
+        moveu={true}/>
+
+      <div style={{fontSize:14,color:M.text,fontFamily:BF,textAlign:"center",fontWeight:700}}>
+        Qual resposta combina com esse percurso?
+      </div>
+
+      <div style={{display:"flex",gap:10}}>
+        {opcoes.map(op=>(
+          <button key={op} onClick={()=>escolher(op)} disabled={escolha!==null}
+            style={{
+              flex:1,padding:"16px 8px",
+              background:escolha===op?(op===resultado?M.green+"18":M.teal+"10"):M.card2,
+              border:`2px solid ${escolha===op?(op===resultado?M.green:M.teal):cor(op)+"50"}`,
+              borderRadius:M.r,cursor:escolha===null?"pointer":"default",
+              color:cor(op),fontFamily:TF,fontSize:14,
+            }}>{fmtC(op)}</button>
+        ))}
+      </div>
+
+      {escolha!==null&&(
+        <Card glow={acertou?M.green:M.teal} style={{padding:"12px 14px"}}>
+          <div style={{fontSize:15,color:acertou?M.green:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>
+            {acertou?"Leitura correta da reta.":"Vamos revisar a reta."}
+          </div>
+          <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.5}}>
+            O percurso termina em {fmtC(resultado)}.
           </div>
         </Card>
       )}
@@ -685,7 +773,7 @@ function Demo({parcelas, onFim}) {
    SLIDE ADAPTATIVO
    Controla erros. 2 erros consecutivos = demo repete.
    ================================================================ */
-function SlideAdaptativo({parcelas,tipo="arrastar",onLog,onLiberar}) {
+function SlideAdaptativo({parcelas,tipo="completar",onLog,onLiberar}) {
   const [tentou,     setTentou]     = useState(false)
   const [errosConsec,setErrosConsec]= useState(0)
   const [mostraDemo, setMostraDemo] = useState(false)
@@ -736,11 +824,14 @@ function SlideAdaptativo({parcelas,tipo="arrastar",onLog,onLiberar}) {
     </div>
   )
 
-  const comp = tipo==="arrastar"
-    ? <Arrastar key={renderKey} parcelas={parcelas}
+  const comp = tipo==="completar"
+    ? <CompletarReta key={renderKey} parcelas={parcelas}
         onAcertou={handleAcertou} onErrou={handleErrou}/>
-    : <MultiplaEscolha key={renderKey} parcelas={parcelas}
-        onAcertou={handleAcertou} onErrou={handleErrou}/>
+    : tipo==="confirmar"
+      ? <ConfirmacaoReta key={renderKey} parcelas={parcelas}
+          onAcertou={handleAcertou} onErrou={handleErrou}/>
+      : <MultiplaEscolha key={renderKey} parcelas={parcelas}
+          onAcertou={handleAcertou} onErrou={handleErrou}/>
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -758,7 +849,11 @@ function SlideAdaptativo({parcelas,tipo="arrastar",onLog,onLiberar}) {
       {!tentou&&(
         <div style={{textAlign:"center",fontSize:12,color:M.pink,
           fontFamily:BF,animation:"blink 1s infinite",fontWeight:600}}>
-          {tipo==="arrastar"?"Arrasta ate a posicao correta":"Toca na resposta correta"}
+          {tipo==="completar"
+            ?"Toque no ponto final da reta"
+            :tipo==="confirmar"
+              ?"Confirme a leitura da reta"
+              :"Toca na resposta correta"}
         </div>
       )}
     </div>
@@ -822,9 +917,9 @@ export default function T7() {
        Laudo: memoria operacional e aritmética frágeis
        Comeca em [1,2] — um passo de cada vez */
     {
-      titulo:"Treino 1 — arrasta na reta",
+      titulo:"Treino 1 — completa na reta",
       render:()=>(
-        <SlideAdaptativo parcelas={[1,2]} tipo="arrastar"
+        <SlideAdaptativo parcelas={[1,2]} tipo="completar"
           onLog={e=>setLog(p=>[...p,e])}
           onLiberar={()=>setBloq(false)}/>
       ),
@@ -834,7 +929,7 @@ export default function T7() {
     {
       titulo:"Treino 2 — mesmo formato",
       render:()=>(
-        <SlideAdaptativo parcelas={[2,2]} tipo="arrastar"
+        <SlideAdaptativo parcelas={[2,2]} tipo="confirmar"
           onLog={e=>setLog(p=>[...p,e])}
           onLiberar={()=>setBloq(false)}/>
       ),
@@ -843,9 +938,9 @@ export default function T7() {
     /* 3 - Multipla escolha — muda tipo de resposta
        Laudo: nao depender exclusivamente de arrastar */
     {
-      titulo:"Treino 3 — toca na resposta",
+      titulo:"Treino 3 — confirma o resultado",
       render:()=>(
-        <SlideAdaptativo parcelas={[3,4]} tipo="escolha"
+        <SlideAdaptativo parcelas={[3,4]} tipo="confirmar"
           onLog={e=>setLog(p=>[...p,e])}
           onLiberar={()=>setBloq(false)}/>
       ),
@@ -870,9 +965,9 @@ export default function T7() {
 
     /* 5 - Arrastar negativo pequeno */
     {
-      titulo:"Treino 5 — arrasta na reta",
+      titulo:"Treino 5 — completa na reta",
       render:()=>(
-        <SlideAdaptativo parcelas={[-1,-2]} tipo="arrastar"
+        <SlideAdaptativo parcelas={[-1,-2]} tipo="completar"
           onLog={e=>setLog(p=>[...p,e])}
           onLiberar={()=>setBloq(false)}/>
       ),
@@ -932,10 +1027,10 @@ export default function T7() {
 
   /* ── DESCOBERTA — progressao gradual ────────────────────────── */
   const DESC = [
-    {ps:[2,3],t:"arrastar"}, {ps:[3,3],t:"arrastar"},
-    {ps:[-2,-3],t:"escolha"}, {ps:[-3,-3],t:"escolha"},
-    {ps:[4,4],t:"arrastar"}, {ps:[5,4],t:"arrastar"},
-    {ps:[-4,-4],t:"escolha"}, {ps:[-5,-4],t:"escolha"},
+    {ps:[2,3],t:"confirmar"}, {ps:[3,3],t:"completar"},
+    {ps:[-2,-3],t:"confirmar"}, {ps:[-3,-3],t:"completar"},
+    {ps:[4,4],t:"completar"}, {ps:[5,4],t:"escolha"},
+    {ps:[-4,-4],t:"completar"}, {ps:[-5,-4],t:"escolha"},
   ]
 
   /* ── FORMALIZACAO — nivel prova ──────────────────────────────── */
@@ -952,8 +1047,8 @@ export default function T7() {
       ],
       obs:"Usa a reta como apoio. Onde eu paro e a resposta.",
     },
-    {ps:[6,7],t:"arrastar"},   {ps:[-6,-7],t:"escolha"},
-    {ps:[8,9],t:"escolha"},    {ps:[-8,-9],t:"arrastar"},
+    {ps:[6,7],t:"confirmar"},  {ps:[-6,-7],t:"completar"},
+    {ps:[8,9],t:"escolha"},    {ps:[-8,-9],t:"completar"},
   ]
 
   /* ── RENDERS ─────────────────────────────────────────────────── */
