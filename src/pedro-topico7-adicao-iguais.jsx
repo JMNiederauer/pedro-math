@@ -130,7 +130,7 @@ function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
   const pct    = v => ((v-janMin)/span)*100
   const nums   = Array.from({length:janMax-janMin+1},(_,i)=>janMin+i)
   const LINHA  = "64%"
-  const MIKU_OFFSET_X = 0
+  const MIKU_OFFSET_X = 14
   const MIKU_OFFSET_Y = 6
 
   /* Regua sem sobreposicao */
@@ -283,6 +283,7 @@ function Reta({a,resultado,pos,solto,acertou,rastros=[],moveu=false,
 function Arrastar({parcelas, onAcertou, onErrou}) {
   const resultado    = parcelas.reduce((s,n)=>s+n,0)
   const a            = parcelas[0]
+  const b            = parcelas[1]
   const containerRef = useRef(null)
   const estaArrastando = useRef(false)
   const posRef       = useRef(a)  /* SEMPRE ATUALIZADO — evita stale closure */
@@ -354,6 +355,28 @@ function Arrastar({parcelas, onAcertou, onErrou}) {
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{
+        background:M.card2,borderRadius:M.r,
+        border:`1.5px solid ${M.teal}30`,padding:"12px 14px",
+        display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+      }}>
+        <span style={{fontSize:20,color:cor(a),fontFamily:TF,
+          textShadow:`0 0 10px ${cor(a)}50`}}>{fmtC(a)}</span>
+        <span style={{fontSize:16,color:M.teal,fontFamily:TF}}>+</span>
+        <span style={{fontSize:20,color:cor(b),fontFamily:TF,
+          textShadow:`0 0 10px ${cor(b)}50`}}>{fmtC(b)}</span>
+        <span style={{fontSize:16,color:M.teal,fontFamily:TF}}>=</span>
+        <div style={{
+          minWidth:56,padding:"5px 10px",textAlign:"center",
+          borderRadius:8,border:`1.5px solid ${solto?cor(resultado)+"50":M.brd}`,
+          background:solto?cor(resultado)+"18":M.brd+"40",
+          color:solto?cor(resultado):M.muted,
+          fontFamily:TF,fontSize:20,
+          textShadow:solto?`0 0 14px ${cor(resultado)}80`:"none",
+          animation:solto&&acertou?"arrive .5s both":"none",
+        }}>{solto?fmtC(resultado):"?"}</div>
+      </div>
+
       <Reta a={a} resultado={resultado} pos={pos}
         solto={solto} acertou={acertou}
         rastros={rastros} moveu={moveu}
