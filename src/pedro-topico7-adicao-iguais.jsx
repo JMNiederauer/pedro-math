@@ -2,41 +2,51 @@ import { useState } from "react"
 import mikuImg from "./hatsune-miku-png.png"
 
 const M = {
-  teal:"#39c5bb", teal2:"#00ddc0", tealDk:"#1a7a75",
-  pink:"#ff1688",
-  gray:"#5a676b",
-  bg:"#060d12",
-  card:"#0c1a18", card2:"#071210", brd:"#1a3530",
-  text:"#d0f4f0", muted:"#5d7f80",
-  neg:"#60a5fa", pos:"#fb923c",
-  green:"#10b981", warn:"#f59e0b",
-  r:12,
+  bg:"#071116",
+  panel:"#0d1a1f",
+  panel2:"#0a1519",
+  line:"#183138",
+  text:"#d6ece9",
+  muted:"#7d9a97",
+  accent:"#3ecfc6",
+  accent2:"#24928c",
+  pos:"#fb923c",
+  neg:"#60a5fa",
+  ok:"#10b981",
+  warn:"#f59e0b",
+  border:"#1a3530",
+  radius:14,
 }
 
-const cor = n => n < 0 ? M.neg : n > 0 ? M.pos : M.teal
-const fmt = n => n > 0 ? `+${n}` : `${n}`
-const fmtC = n => n < 0 ? `(${n})` : `(+${n})`
-const TF = "'Press Start 2P', monospace"
-const BF = "system-ui,-apple-system,sans-serif"
 const PHONE = "5591993922666"
+const BF = "system-ui,-apple-system,sans-serif"
+const TF = "'Press Start 2P', monospace"
 
 const CSS = `
-  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-  @keyframes pulse  { 0%,100%{opacity:.5} 50%{opacity:1} }
-  @keyframes popIn  { 0%{transform:scale(.92);opacity:0} 100%{transform:scale(1);opacity:1} }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+  @keyframes pulseLine { from { opacity:.7 } to { opacity:1 } }
 `
+
+const cor = n => n < 0 ? M.neg : n > 0 ? M.pos : M.accent
+const fmt = n => n > 0 ? `+${n}` : `${n}`
+const fmtC = n => n < 0 ? `(${n})` : `(+${n})`
 
 function Tela({children}) {
   return (
     <div style={{
       minHeight:"100vh",
-      background:`radial-gradient(ellipse at 20% 10%,#0a2020 0%,${M.bg} 55%),
-                  radial-gradient(ellipse at 80% 90%,#1a0a15 0%,transparent 50%)`,
-      color:M.text, fontFamily:BF, padding:"14px 14px 36px",
+      background:`radial-gradient(circle at 20% 10%, #0d2626 0%, ${M.bg} 48%),
+                  radial-gradient(circle at 80% 100%, #1a0f16 0%, transparent 35%)`,
+      color:M.text,
+      fontFamily:BF,
+      padding:"16px 14px 34px",
     }}>
       <div style={{
-        maxWidth:500, margin:"0 auto", display:"flex",
-        flexDirection:"column", minHeight:"calc(100vh - 50px)",
+        maxWidth:540,
+        margin:"0 auto",
+        minHeight:"calc(100vh - 50px)",
+        display:"flex",
+        flexDirection:"column",
       }}>
         {children}
       </div>
@@ -45,13 +55,12 @@ function Tela({children}) {
   )
 }
 
-function Card({children, style={}, glow}) {
+function Card({children, style={}}) {
   return (
     <div style={{
-      background:M.card,
-      borderRadius:M.r,
-      border:`1.5px solid ${glow ? `${glow}45` : M.brd}`,
-      boxShadow:glow ? `0 0 18px ${glow}18` : "none",
+      background:M.panel,
+      border:`1px solid ${M.border}`,
+      borderRadius:M.radius,
       padding:14,
       ...style,
     }}>
@@ -60,206 +69,264 @@ function Card({children, style={}, glow}) {
   )
 }
 
-function Btn({label,onClick,c=M.teal,disabled,ghost}) {
+function Btn({label,onClick,disabled,ghost=false,color=M.accent}) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      width:"100%", padding:"14px 16px",
-      background:disabled ? M.brd : ghost ? "transparent" : c,
-      color:disabled ? M.muted : ghost ? c : M.bg,
-      border:ghost ? `2px solid ${c}` : "none",
-      borderRadius:M.r,
-      fontFamily:TF, fontSize:10, letterSpacing:.5,
-      textTransform:"uppercase",
+      width:"100%",
+      padding:"14px 16px",
+      borderRadius:M.radius,
+      border:ghost ? `2px solid ${color}` : "none",
+      background:disabled ? M.line : ghost ? "transparent" : color,
+      color:disabled ? M.muted : ghost ? color : M.bg,
       cursor:disabled ? "not-allowed" : "pointer",
-      opacity:disabled ? .45 : 1,
-      boxShadow:disabled || ghost ? "none" : `0 0 18px ${c}35`,
+      opacity:disabled ? .5 : 1,
+      fontFamily:TF,
+      fontSize:10,
+      letterSpacing:.5,
+      textTransform:"uppercase",
     }}>
       {label}
     </button>
   )
 }
 
-function Prog({n,total}) {
+function Prog({index,total}) {
   return (
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-      <div style={{flex:1,height:4,background:M.brd,borderRadius:2,overflow:"hidden"}}>
+      <div style={{flex:1,height:5,background:M.line,borderRadius:99,overflow:"hidden"}}>
         <div style={{
-          width:`${((n+1)/total)*100}%`,
+          width:`${((index+1)/total)*100}%`,
           height:"100%",
-          background:`linear-gradient(to right,${M.tealDk},${M.teal})`,
-          borderRadius:2,
-          transition:"width .3s",
+          background:`linear-gradient(to right, ${M.accent2}, ${M.accent})`,
+          transition:"width .25s",
         }}/>
       </div>
-      <span style={{fontSize:10,color:M.teal,fontFamily:TF}}>{n+1}/{total}</span>
+      <span style={{fontSize:10,fontFamily:TF,color:M.accent}}>{index+1}/{total}</span>
     </div>
   )
 }
 
-function Conta({a,b,resultado=null,mostrarResultado=false}) {
+function Conta({a,b,resultado=null,showResult=false}) {
   return (
-    <div style={{
-      background:M.card2,borderRadius:M.r,
-      border:`1.5px solid ${M.teal}30`,padding:"12px 14px",
-      display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+    <Card style={{
+      background:M.panel2,
+      display:"flex",
+      alignItems:"center",
+      justifyContent:"center",
+      gap:10,
     }}>
-      <span style={{fontSize:20,color:cor(a),fontFamily:TF,textShadow:`0 0 10px ${cor(a)}40`}}>{fmtC(a)}</span>
-      <span style={{fontSize:16,color:M.teal,fontFamily:TF}}>+</span>
-      <span style={{fontSize:20,color:cor(b),fontFamily:TF,textShadow:`0 0 10px ${cor(b)}40`}}>{fmtC(b)}</span>
-      <span style={{fontSize:16,color:M.teal,fontFamily:TF}}>=</span>
+      <span style={{fontFamily:TF,fontSize:20,color:cor(a)}}>{fmtC(a)}</span>
+      <span style={{fontFamily:TF,fontSize:16,color:M.accent}}>+</span>
+      <span style={{fontFamily:TF,fontSize:20,color:cor(b)}}>{fmtC(b)}</span>
+      <span style={{fontFamily:TF,fontSize:16,color:M.accent}}>=</span>
       <div style={{
-        minWidth:58,padding:"5px 10px",textAlign:"center",
-        borderRadius:8,
-        border:`1.5px solid ${mostrarResultado ? `${cor(resultado)}55` : M.brd}`,
-        background:mostrarResultado ? `${cor(resultado)}18` : `${M.brd}55`,
-        color:mostrarResultado ? cor(resultado) : M.muted,
-        fontFamily:TF,fontSize:20,
+        minWidth:62,
+        textAlign:"center",
+        padding:"6px 10px",
+        borderRadius:10,
+        border:`1.5px solid ${showResult ? `${cor(resultado)}55` : M.line}`,
+        background:showResult ? `${cor(resultado)}18` : `${M.line}55`,
+        color:showResult ? cor(resultado) : M.muted,
+        fontFamily:TF,
+        fontSize:20,
       }}>
-        {mostrarResultado ? fmtC(resultado) : "?"}
+        {showResult ? fmtC(resultado) : "?"}
       </div>
-    </div>
+    </Card>
   )
 }
 
-function Reta({
+function NumberLine({
   a,
-  resultado,
-  pos,
-  caminho=[],
-  mostrarResultado=false,
-  mostrarSelecao=false,
-  selecionado=null,
-  clicavel=false,
-  onEscolher,
+  result,
+  showPath=false,
+  showResult=false,
+  highlight=null,
+  interactive=false,
+  selected=null,
+  onSelect,
 }) {
-  const min = Math.min(a, resultado, 0) - 2
-  const max = Math.max(a, resultado, 0) + 2
-  const span = max - min
-  const casas = span + 1
-  const pct = v => (((v - min) + 0.5) / casas) * 100
-  const nums = Array.from({length:casas},(_,i)=>min+i)
-  const linhaTop = "62%"
+  const min = Math.min(a, result, 0) - 2
+  const max = Math.max(a, result, 0) + 2
+  const count = max - min + 1
+  const values = Array.from({length:count}, (_, i) => min + i)
+  const pct = value => (((value - min) + 0.5) / count) * 100
+
+  const path = []
+  if (showPath) {
+    const dir = Math.sign(result - a)
+    const steps = Math.abs(result - a)
+    for (let i = 0; i < steps; i += 1) path.push(a + (dir * i))
+  }
 
   return (
-    <div style={{
-      background:M.card2,borderRadius:M.r,border:`1.5px solid ${M.teal}20`,
-    }}>
+    <Card style={{padding:0,overflow:"hidden"}}>
       <div style={{
-        borderBottom:`1px solid ${M.brd}`,background:"#ffffff04",
-        padding:"5px 12px",display:"flex",justifyContent:"space-between",
-        borderRadius:`${M.r}px ${M.r}px 0 0`,fontFamily:TF,fontSize:8,
+        borderBottom:`1px solid ${M.border}`,
+        padding:"8px 14px",
+        display:"flex",
+        justifyContent:"space-between",
+        fontFamily:TF,
+        fontSize:8,
+        color:M.muted,
+        background:"#ffffff03",
       }}>
         <span style={{color:M.neg}}>NEG</span>
-        <span style={{color:M.teal}}>RETA</span>
+        <span style={{color:M.accent}}>RETA</span>
         <span style={{color:M.pos}}>POS</span>
       </div>
 
-      <div style={{position:"relative",height:106,padding:"0 6px"}}>
+      <div style={{position:"relative",height:112,padding:"0 8px"}}>
         <div style={{
-          position:"absolute",left:"1%",right:"1%",top:linhaTop,
-          height:2,transform:"translateY(-50%)",
-          background:`linear-gradient(to right,${M.brd},${M.teal}45,${M.brd})`,
+          position:"absolute",
+          top:"62%",
+          left:"1%",
+          right:"1%",
+          height:2,
+          transform:"translateY(-50%)",
+          background:`linear-gradient(to right, ${M.line}, ${M.accent}55, ${M.line})`,
         }}/>
 
-        {caminho.map((v,i)=>(
-          <div key={`${v}-${i}`} style={{
-            position:"absolute",left:`${pct(v)}%`,top:linhaTop,
-            transform:"translate(-50%,-50%)",
-            width:7,height:7,borderRadius:"50%",
-            background:cor(resultado),opacity:.5,zIndex:2,
+        {path.map((value, index) => (
+          <div key={`${value}-${index}`} style={{
+            position:"absolute",
+            left:`${pct(value)}%`,
+            top:"62%",
+            transform:"translate(-50%, -50%)",
+            width:7,
+            height:7,
+            borderRadius:"50%",
+            background:cor(result),
+            opacity:.55,
           }}/>
         ))}
 
-        {pos!==a&&(
+        {showPath && (
           <div style={{
             position:"absolute",
-            left:`${pct(Math.min(a,pos))}%`,
-            width:`${Math.abs(pct(pos)-pct(a))}%`,
-            top:linhaTop,height:4,transform:"translateY(-50%)",
-            background:resultado>=0
-              ?`linear-gradient(to right,${M.pos}40,${M.pos})`
-              :`linear-gradient(to right,${M.neg},${M.neg}40)`,
-            borderRadius:2,zIndex:3,
+            top:"62%",
+            height:4,
+            transform:"translateY(-50%)",
+            left:`${pct(Math.min(a, result))}%`,
+            width:`${Math.abs(pct(result) - pct(a))}%`,
+            borderRadius:99,
+            background:result >= 0
+              ? `linear-gradient(to right, ${M.pos}40, ${M.pos})`
+              : `linear-gradient(to right, ${M.neg}, ${M.neg}40)`,
+            animation:"pulseLine .4s ease-in-out infinite alternate",
           }}/>
         )}
 
-        {min<=0&&max>=0&&(
-          <div style={{
-            position:"absolute",left:`${pct(0)}%`,top:linhaTop,
-            transform:"translate(-50%,-50%)",
-            width:22,height:22,borderRadius:"50%",
-            background:M.bg,border:`2px solid ${M.teal}`,
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:9,color:M.teal,zIndex:4,fontFamily:TF,
-          }}>0</div>
-        )}
-
         <div style={{
-          position:"absolute",left:`${pct(a)}%`,top:linhaTop,
-          transform:"translate(-50%,-50%)",
-          width:28,height:28,borderRadius:"50%",
-          border:`2px dashed ${cor(a)}75`,zIndex:2,
+          position:"absolute",
+          left:`${pct(a)}%`,
+          top:"62%",
+          transform:"translate(-50%, -50%)",
+          width:28,
+          height:28,
+          borderRadius:"50%",
+          border:`2px dashed ${cor(a)}85`,
         }}/>
 
-        {mostrarSelecao&&selecionado!==null&&(
+        {selected!==null && !showResult && (
           <div style={{
-            position:"absolute",left:`${pct(selecionado)}%`,top:linhaTop,
-            transform:"translate(-50%,-50%)",
-            width:28,height:28,borderRadius:"50%",
-            background:`${M.teal}18`,border:`2px solid ${M.teal}`,
-            boxShadow:`0 0 10px ${M.teal}30`,zIndex:4,
+            position:"absolute",
+            left:`${pct(selected)}%`,
+            top:"62%",
+            transform:"translate(-50%, -50%)",
+            width:30,
+            height:30,
+            borderRadius:"50%",
+            border:`2px solid ${M.accent}`,
+            background:`${M.accent}18`,
+            boxShadow:`0 0 12px ${M.accent}35`,
           }}/>
         )}
 
-        {mostrarResultado&&(
+        {showResult && (
           <div style={{
-            position:"absolute",left:`${pct(resultado)}%`,top:linhaTop,
-            transform:"translate(-50%,-50%)",
-            width:34,height:34,borderRadius:"50%",
-            background:cor(resultado),border:`3px solid ${M.bg}`,
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:Math.abs(resultado)>=10?10:13,
-            color:M.bg,fontFamily:TF,zIndex:5,
-            boxShadow:`0 0 18px ${cor(resultado)}55`,
-            animation:"popIn .35s both",
-          }}>{fmt(resultado)}</div>
+            position:"absolute",
+            left:`${pct(result)}%`,
+            top:"62%",
+            transform:"translate(-50%, -50%)",
+            width:36,
+            height:36,
+            borderRadius:"50%",
+            border:`3px solid ${M.bg}`,
+            background:cor(result),
+            display:"flex",
+            alignItems:"center",
+            justifyContent:"center",
+            color:M.bg,
+            fontFamily:TF,
+            fontSize:Math.abs(result) >= 10 ? 10 : 13,
+          }}>
+            {fmt(result)}
+          </div>
+        )}
+
+        {highlight!==null && (
+          <div style={{
+            position:"absolute",
+            left:`${pct(highlight)}%`,
+            top:"31%",
+            transform:"translateX(-50%)",
+            color:M.accent,
+            fontSize:11,
+            fontFamily:TF,
+          }}>
+            foco
+          </div>
         )}
 
         <div style={{
-          position:"absolute",left:`${pct(pos)}%`,top:linhaTop,
-          transform:"translate(-50%,-98%)",
-          zIndex:6,pointerEvents:"none",
-          filter:`drop-shadow(0 0 6px ${M.teal}40)`,
+          position:"absolute",
+          right:14,
+          top:10,
+          display:"flex",
+          alignItems:"center",
+          gap:8,
+          padding:"6px 8px",
+          border:`1px solid ${M.border}`,
+          borderRadius:10,
+          background:M.panel2,
         }}>
-          <img src={mikuImg} alt="Miku" style={{width:42,height:"auto",display:"block"}}/>
+          <img src={mikuImg} alt="Miku" style={{width:22,height:"auto"}}/>
+          <span style={{fontSize:11,color:M.muted,fontFamily:BF}}>guia visual</span>
         </div>
       </div>
 
       <div style={{
-        display:"flex",padding:"3px 6px 5px",
-        borderTop:`1px solid ${M.brd}`,background:"#00000018",
-        borderRadius:`0 0 ${M.r}px ${M.r}px`,
+        display:"flex",
+        padding:"6px 8px 8px",
+        borderTop:`1px solid ${M.border}`,
+        background:"#00000018",
       }}>
-        {nums.map(n=>{
-          const destaque = n===a || (mostrarResultado&&n===resultado) || (mostrarSelecao&&n===selecionado)
-          const color = n===a
+        {values.map(value => {
+          const active = value === a || value === result || value === selected
+          const color = value === a
             ? cor(a)
-            : mostrarResultado && n===resultado
-              ? cor(resultado)
-              : mostrarSelecao && n===selecionado
-                ? M.teal
-                : n===0
-                  ? M.teal
+            : value === result && showResult
+              ? cor(result)
+              : value === selected
+                ? M.accent
+                : value === 0
+                  ? M.accent
                   : M.muted
+          const content = value === 0 ? "0" : fmt(value)
 
-          const content = n===0 ? "0" : fmt(n)
-
-          if (clicavel) {
+          if (interactive) {
             return (
-              <button key={n} onClick={()=>onEscolher?.(n)} style={{
-                flex:1,textAlign:"center",padding:0,background:"transparent",border:"none",
-                color, fontFamily:TF, fontSize:destaque?12:9, lineHeight:2.2,
+              <button key={value} onClick={()=>onSelect?.(value)} style={{
+                flex:1,
+                background:"transparent",
+                border:"none",
+                padding:0,
                 cursor:"pointer",
+                color,
+                fontFamily:TF,
+                fontSize:active ? 12 : 9,
+                lineHeight:2.1,
               }}>
                 {content}
               </button>
@@ -267,146 +334,146 @@ function Reta({
           }
 
           return (
-            <div key={n} style={{
-              flex:1,textAlign:"center",fontSize:destaque?12:9,
-              color, fontFamily:TF, lineHeight:2.2,
+            <div key={value} style={{
+              flex:1,
+              textAlign:"center",
+              color,
+              fontFamily:TF,
+              fontSize:active ? 12 : 9,
+              lineHeight:2.1,
             }}>
               {content}
             </div>
           )
         })}
       </div>
-    </div>
+    </Card>
   )
 }
 
-function resumoPercurso(a,b) {
-  return `${fmtC(a)} + ${fmtC(b)}`
+function StepCard({step,total,title,text}) {
+  return (
+    <Card style={{animation:"fadeUp .25s both"}}>
+      <div style={{fontSize:11,color:M.accent,fontFamily:TF,marginBottom:10}}>
+        ETAPA {step}/{total}
+      </div>
+      <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
+        {title}
+      </div>
+      <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+        {text}
+      </div>
+    </Card>
+  )
 }
 
-function caminhoAte(a, destino) {
-  const dir = Math.sign(destino - a)
-  const passos = Math.abs(destino - a)
-  return Array.from({length:passos},(_,i)=>a + dir*i)
-}
+function ObserveSlide({a,b,onDone}) {
+  const result = a + b
+  const [step,setStep] = useState(0)
 
-function DemoGuiada({parcelas,onFim}) {
-  const [a,b] = parcelas
-  const resultado = a + b
-  const [etapa,setEtapa] = useState(0)
-
-  const passos = [
+  const content = [
     {
-      titulo:"Leia o ponto de partida.",
-      texto:`A conta comeca em ${fmtC(a)}.`,
-      pos:a,
-      caminho:[],
+      title:"Comeco visivel",
+      text:`A reta mostra onde a conta comeca: ${fmtC(a)}.`,
+      highlight:a,
+      showPath:false,
+      showResult:false,
     },
     {
-      titulo:"Acompanhe o deslocamento.",
-      texto:`Agora acompanhe ${Math.abs(b)} ${Math.abs(b)===1?"passo":"passos"} ${b>0?"para a direita":"para a esquerda"}.`,
-      pos:resultado,
-      caminho:caminhoAte(a, resultado),
+      title:"Deslocamento claro",
+      text:`Agora acompanhe ${Math.abs(b)} ${Math.abs(b)===1?"passo":"passos"} ${b>0?"para a direita":"para a esquerda"}.`,
+      highlight:null,
+      showPath:true,
+      showResult:false,
     },
     {
-      titulo:"Veja a chegada.",
-      texto:`A chegada fica em ${fmtC(resultado)}.`,
-      pos:resultado,
-      caminho:caminhoAte(a, resultado),
-      mostrarResultado:true,
+      title:"Chegada explicita",
+      text:`A chegada fica em ${fmtC(result)}.`,
+      highlight:null,
+      showPath:true,
+      showResult:true,
     },
   ]
 
-  const atual = passos[etapa]
-  const ultimo = etapa === passos.length-1
+  const current = content[step]
+  const last = step === content.length - 1
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      <Conta a={a} b={b} resultado={resultado} mostrarResultado={ultimo}/>
-      <Card glow={M.teal}>
-        <div style={{fontSize:13,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-          {atual.titulo}
-        </div>
-        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-          {atual.texto}
-        </div>
-      </Card>
-      <Reta
+      <Conta a={a} b={b} resultado={result} showResult={last}/>
+      <StepCard step={step+1} total={content.length} title={current.title} text={current.text}/>
+      <NumberLine
         a={a}
-        resultado={resultado}
-        pos={atual.pos}
-        caminho={atual.caminho}
-        mostrarResultado={Boolean(atual.mostrarResultado)}
+        result={result}
+        highlight={current.highlight}
+        showPath={current.showPath}
+        showResult={current.showResult}
       />
       <Btn
-        label={ultimo ? "Fechar demonstracao" : "Proximo passo"}
+        label={last ? "Fechar demonstracao" : "Proximo passo"}
         onClick={()=>{
-          if (ultimo) onFim?.()
-          else setEtapa(v=>v+1)
+          if (last) onDone?.()
+          else setStep(v=>v+1)
         }}
       />
     </div>
   )
 }
 
-function ConfirmacaoReta({parcelas,onAcertou,onErrou}) {
-  const [a,b] = parcelas
-  const resultado = a + b
-  const [escolha,setEscolha] = useState(null)
-  const opcoes = useState(()=>{
-    const distrator = resultado + (resultado >= 0 ? -1 : 1)
-    return [resultado, distrator].sort(()=>Math.random()-.5)
+function ConfirmSlide({a,b,onCorrect,onWrong}) {
+  const result = a + b
+  const [choice,setChoice] = useState(null)
+  const options = useState(()=>{
+    const wrong = result + (result >= 0 ? -1 : 1)
+    return [result, wrong].sort(()=>Math.random()-.5)
   })[0]
-  const acertou = escolha === resultado
 
-  const responder = valor => {
-    if (escolha!==null) return
-    setEscolha(valor)
-    if (valor===resultado) onAcertou?.()
-    else onErrou?.()
+  const choose = value => {
+    if (choice!==null) return
+    setChoice(value)
+    if (value === result) onCorrect?.()
+    else onWrong?.()
   }
+
+  const correct = choice === result
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       <Conta a={a} b={b}/>
-      <Card>
-        <div style={{fontSize:13,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-          Leia a reta antes de responder.
-        </div>
-        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-          Comece em {fmtC(a)} e acompanhe {Math.abs(b)} {Math.abs(b)===1?"passo":"passos"} {b>0?"para a direita":"para a esquerda"}.
-        </div>
-      </Card>
-      <Reta
-        a={a}
-        resultado={resultado}
-        pos={resultado}
-        caminho={caminhoAte(a, resultado)}
-        mostrarResultado
+      <StepCard
+        step={1}
+        total={1}
+        title="Leia primeiro, responda depois"
+        text={`Observe a reta inteira antes de decidir onde a conta termina.`}
       />
-      <div style={{fontSize:14,color:M.text,fontFamily:BF,textAlign:"center",fontWeight:700}}>
-        Qual resposta combina com esse percurso?
+      <NumberLine a={a} result={result} showPath showResult />
+      <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,textAlign:"center"}}>
+        Qual chegada combina com esse percurso?
       </div>
       <div style={{display:"flex",gap:10}}>
-        {opcoes.map(op=>(
-          <button key={op} onClick={()=>responder(op)} disabled={escolha!==null} style={{
-            flex:1,padding:"18px 8px",
-            background:escolha===op?(op===resultado?`${M.green}18`:`${M.teal}10`):M.card2,
-            border:`2px solid ${escolha===op?(op===resultado?M.green:M.teal):`${cor(op)}55`}`,
-            borderRadius:M.r,cursor:escolha===null?"pointer":"default",
-            color:cor(op),fontFamily:TF,fontSize:14,
+        {options.map(value=>(
+          <button key={value} onClick={()=>choose(value)} disabled={choice!==null} style={{
+            flex:1,
+            padding:"18px 8px",
+            background:choice===value?(value===result?`${M.ok}18`:`${M.warn}18`):M.panel,
+            border:`2px solid ${choice===value?(value===result?M.ok:M.warn):`${cor(value)}55`}`,
+            borderRadius:M.radius,
+            color:cor(value),
+            fontFamily:TF,
+            fontSize:14,
+            cursor:choice===null?"pointer":"default",
           }}>
-            {fmtC(op)}
+            {fmtC(value)}
           </button>
         ))}
       </div>
-      {escolha!==null&&(
-        <Card glow={acertou?M.green:M.teal}>
-          <div style={{fontSize:15,color:acertou?M.green:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>
-            {acertou ? "Leitura correta da reta." : "Vamos revisar a reta."}
+      {choice!==null&&(
+        <Card>
+          <div style={{fontSize:15,color:correct?M.ok:M.warn,fontFamily:BF,fontWeight:700,marginBottom:6}}>
+            {correct ? "Leitura correta da reta." : "Vamos revisar a chegada."}
           </div>
-          <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.5}}>
-            O percurso termina em {fmtC(resultado)}.
+          <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+            A reta termina em {fmtC(result)}.
           </div>
         </Card>
       )}
@@ -414,64 +481,50 @@ function ConfirmacaoReta({parcelas,onAcertou,onErrou}) {
   )
 }
 
-function CompletarReta({parcelas,onAcertou,onErrou}) {
-  const [a,b] = parcelas
-  const resultado = a + b
-  const [selecionado,setSelecionado] = useState(null)
-  const [finalizado,setFinalizado] = useState(false)
-  const [acertou,setAcertou] = useState(null)
+function CompleteSlide({a,b,onCorrect,onWrong}) {
+  const result = a + b
+  const [selected,setSelected] = useState(null)
+  const [done,setDone] = useState(false)
+  const correct = selected === result
 
-  const escolher = valor => {
-    if (finalizado) return
-    setSelecionado(valor)
-    setFinalizado(true)
-    const ok = valor === resultado
-    setAcertou(ok)
-    if (ok) onAcertou?.()
-    else onErrou?.()
+  const choose = value => {
+    if (done) return
+    setSelected(value)
+    setDone(true)
+    if (value === result) onCorrect?.()
+    else onWrong?.()
   }
-
-  const pos = finalizado ? (acertou ? resultado : selecionado) : a
-  const caminho = finalizado ? caminhoAte(a, acertou ? resultado : selecionado) : []
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      <Conta a={a} b={b} resultado={resultado} mostrarResultado={finalizado&&acertou}/>
-      <Card>
-        <div style={{fontSize:13,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
-          Use a reta em 3 passos:
-        </div>
-        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>1. Comece em {fmtC(a)}.</div>
-        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-          2. Ande {Math.abs(b)} {Math.abs(b)===1?"passo":"passos"} {b>0?"para a direita.":"para a esquerda."}
-        </div>
-        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>3. Toque no ponto final da reta.</div>
-      </Card>
-      <Reta
-        a={a}
-        resultado={resultado}
-        pos={finalizado && !acertou ? selecionado : pos}
-        caminho={caminho}
-        mostrarResultado={finalizado}
-        mostrarSelecao={Boolean(finalizado && !acertou)}
-        selecionado={selecionado}
-        clicavel={!finalizado}
-        onEscolher={escolher}
+      <Conta a={a} b={b} resultado={result} showResult={done && correct} />
+      <StepCard
+        step={1}
+        total={1}
+        title="Complete a reta"
+        text={`Comece em ${fmtC(a)}, acompanhe ${Math.abs(b)} ${Math.abs(b)===1?"passo":"passos"} e toque na chegada.`}
       />
-      {!finalizado&&(
-        <div style={{textAlign:"center",fontSize:13,color:M.teal,fontFamily:BF,fontWeight:700}}>
+      <NumberLine
+        a={a}
+        result={result}
+        selected={selected}
+        showPath={done}
+        showResult={done}
+        interactive={!done}
+        onSelect={choose}
+      />
+      {!done&&(
+        <div style={{textAlign:"center",fontSize:13,color:M.accent,fontFamily:BF,fontWeight:700}}>
           Toque no ponto final da reta.
         </div>
       )}
-      {finalizado&&(
-        <Card glow={acertou?M.green:M.teal}>
-          <div style={{fontSize:15,color:acertou?M.green:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>
-            {acertou ? "Boa leitura da reta." : "Vamos revisar esse passo."}
+      {done&&(
+        <Card>
+          <div style={{fontSize:15,color:correct?M.ok:M.warn,fontFamily:BF,fontWeight:700,marginBottom:6}}>
+            {correct ? "Boa leitura da reta." : "A chegada precisa de ajuste."}
           </div>
-          <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.5}}>
-            {acertou
-              ? `A chegada fica em ${fmtC(resultado)}.`
-              : `A chegada correta fica em ${fmtC(resultado)}.`}
+          <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+            {correct ? `A chegada fica em ${fmtC(result)}.` : `A reta correta termina em ${fmtC(result)}.`}
           </div>
         </Card>
       )}
@@ -479,64 +532,59 @@ function CompletarReta({parcelas,onAcertou,onErrou}) {
   )
 }
 
-function EscolhaFinal({parcelas,onAcertou,onErrou}) {
-  const [a,b] = parcelas
-  const resultado = a + b
-  const [escolha,setEscolha] = useState(null)
+function ExplainSlide({a,b,onCorrect,onWrong}) {
+  const result = a + b
+  const [choice,setChoice] = useState(null)
+  const correctText = `Comeca em ${fmtC(a)} e anda ${Math.abs(b)} ${b>0?"para a direita":"para a esquerda"}.`
+  const wrongText = `Comeca em ${fmtC(result)} e volta para ${fmtC(a)}.`
 
-  const opcoes = useState(()=>{
-    const d1 = resultado + (resultado>=0?2:-2)
-    const d2 = resultado + (resultado>=0?-2:2)
-    return [resultado,d1,d2].sort(()=>Math.random()-.5)
-  })[0]
+  const options = useState(()=>[correctText, wrongText].sort(()=>Math.random()-.5))[0]
 
-  const responder = valor => {
-    if (escolha!==null) return
-    setEscolha(valor)
-    if (valor===resultado) onAcertou?.()
-    else onErrou?.()
+  const choose = value => {
+    if (choice!==null) return
+    setChoice(value)
+    if (value === correctText) onCorrect?.()
+    else onWrong?.()
   }
 
-  const acertou = escolha===resultado
+  const correct = choice === correctText
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      <Conta a={a} b={b}/>
-      <Reta
-        a={a}
-        resultado={resultado}
-        pos={resultado}
-        caminho={caminhoAte(a, resultado)}
-        mostrarResultado
+      <Conta a={a} b={b} resultado={result} showResult />
+      <NumberLine a={a} result={result} showPath showResult />
+      <StepCard
+        step={1}
+        total={1}
+        title="Explique com apoio"
+        text="Escolha a frase que descreve corretamente o percurso da reta."
       />
-      <Card>
-        <div style={{fontSize:13,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-          Use o percurso da reta para decidir.
-        </div>
-        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-          Primeiro veja onde a reta termina. Depois escolha a resposta.
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:10}}>
-        {opcoes.map(op=>(
-          <button key={op} onClick={()=>responder(op)} disabled={escolha!==null} style={{
-            flex:1,padding:"18px 8px",
-            background:escolha===op?(op===resultado?`${M.green}18`:`${M.teal}10`):M.card2,
-            border:`2px solid ${escolha===op?(op===resultado?M.green:M.teal):`${cor(op)}55`}`,
-            borderRadius:M.r,cursor:escolha===null?"pointer":"default",
-            color:cor(op),fontFamily:TF,fontSize:14,
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {options.map(text=>(
+          <button key={text} onClick={()=>choose(text)} disabled={choice!==null} style={{
+            width:"100%",
+            textAlign:"left",
+            padding:"14px 16px",
+            borderRadius:M.radius,
+            border:`1.5px solid ${choice===text?(text===correctText?M.ok:M.warn):M.border}`,
+            background:choice===text?(text===correctText?`${M.ok}18`:`${M.warn}18`):M.panel,
+            color:choice===text?(text===correctText?M.ok:M.warn):M.text,
+            fontFamily:BF,
+            fontSize:14,
+            lineHeight:1.5,
+            cursor:choice===null?"pointer":"default",
           }}>
-            {fmtC(op)}
+            {text}
           </button>
         ))}
       </div>
-      {escolha!==null&&(
-        <Card glow={acertou?M.green:M.teal}>
-          <div style={{fontSize:15,color:acertou?M.green:M.teal,fontFamily:BF,fontWeight:700,marginBottom:4}}>
-            {acertou ? "Boa resposta." : "Vamos ajustar juntos."}
+      {choice!==null&&(
+        <Card>
+          <div style={{fontSize:15,color:correct?M.ok:M.warn,fontFamily:BF,fontWeight:700,marginBottom:6}}>
+            {correct ? "Explicacao alinhada com a reta." : "A frase precisa acompanhar o percurso."}
           </div>
-          <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.5}}>
-            A reta termina em {fmtC(resultado)}.
+          <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+            A conta {fmtC(a)} + {fmtC(b)} chega em {fmtC(result)}.
           </div>
         </Card>
       )}
@@ -544,383 +592,330 @@ function EscolhaFinal({parcelas,onAcertou,onErrou}) {
   )
 }
 
-function SlideAdaptativo({parcelas,tipo="completar",onLog,onLiberar}) {
-  const [tentou,setTentou] = useState(false)
-  const [errosConsec,setErrosConsec] = useState(0)
-  const [mostrarDemo,setMostrarDemo] = useState(false)
-  const [reinicio,setReinicio] = useState(0)
+function RetryDemo({a,b,onDone}) {
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      <Card>
+        <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
+          Vamos revisar esse passo com calma.
+        </div>
+        <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+          Primeiro observe a reta. Depois tente de novo.
+        </div>
+      </Card>
+      <ObserveSlide a={a} b={b} onDone={onDone}/>
+    </div>
+  )
+}
 
-  const liberar = () => {
-    if (!tentou) {
-      setTentou(true)
-      onLiberar()
-    }
-  }
+function Bloco({mode,a,b,onLog,onUnlock}) {
+  const [tries,setTries] = useState(0)
+  const [showRetry,setShowRetry] = useState(false)
+  const [version,setVersion] = useState(0)
 
-  const handleAcertou = () => {
-    setErrosConsec(0)
+  const correct = () => {
     onLog({ok:true})
-    liberar()
+    onUnlock()
   }
 
-  const handleErrou = () => {
-    const novos = errosConsec + 1
-    setErrosConsec(novos)
+  const wrong = () => {
+    const next = tries + 1
+    setTries(next)
     onLog({ok:false})
-    if (novos >= 2) setMostrarDemo(true)
+    if (next >= 2) setShowRetry(true)
   }
 
-  if (mostrarDemo) {
+  if (showRetry) {
     return (
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        <Card glow={M.teal}>
-          <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
-            Vamos rever esse passo com calma.
-          </div>
-          <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
-            Primeiro veja a reta. Depois tente outra vez.
-          </div>
-        </Card>
-        <DemoGuiada parcelas={parcelas} onFim={()=>{
-          setMostrarDemo(false)
-          setErrosConsec(0)
-          setReinicio(v=>v+1)
-        }}/>
-      </div>
+      <RetryDemo
+        a={a}
+        b={b}
+        onDone={()=>{
+          setShowRetry(false)
+          setTries(0)
+          setVersion(v=>v+1)
+        }}
+      />
     )
   }
 
-  const comp = tipo==="ver"
-    ? <DemoGuiada key={reinicio} parcelas={parcelas} onFim={liberar}/>
-    : tipo==="confirmar"
-      ? <ConfirmacaoReta key={reinicio} parcelas={parcelas} onAcertou={handleAcertou} onErrou={handleErrou}/>
-      : tipo==="completar"
-        ? <CompletarReta key={reinicio} parcelas={parcelas} onAcertou={handleAcertou} onErrou={handleErrou}/>
-        : <EscolhaFinal key={reinicio} parcelas={parcelas} onAcertou={handleAcertou} onErrou={handleErrou}/>
+  if (mode === "observe") return <ObserveSlide key={version} a={a} b={b} onDone={onUnlock} />
+  if (mode === "confirm") return <ConfirmSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong} />
+  if (mode === "complete") return <CompleteSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong} />
+  return <ExplainSlide key={version} a={a} b={b} onCorrect={correct} onWrong={wrong} />
+}
 
+function SummaryRule() {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      {comp}
-      {!tentou&&tipo!=="ver"&&(
-        <div style={{textAlign:"center",fontSize:12,color:M.pink,fontFamily:BF,fontWeight:700}}>
-          {tipo==="confirmar"
-            ? "Primeiro leia a reta. Depois confirme."
-            : tipo==="completar"
-              ? "Use a reta para escolher a chegada."
-              : "Use a reta antes de responder."}
+      <Card>
+        <div style={{fontSize:11,color:M.accent,fontFamily:TF,marginBottom:10}}>REGRA VISUAL</div>
+        <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7}}>
+          Quando os dois numeros tem o mesmo sinal, a reta continua para o mesmo lado.
         </div>
-      )}
+      </Card>
+      <Card style={{display:"flex",flexDirection:"column",gap:8}}>
+        {[[2,3], [4,4], [-2,-3], [-4,-4]].map(([a,b])=>(
+          <div key={`${a}-${b}`} style={{
+            background:`${cor(a+b)}10`,
+            border:`1px solid ${cor(a+b)}30`,
+            borderRadius:10,
+            padding:"10px 12px",
+            fontFamily:TF,
+            fontSize:12,
+            color:cor(a+b),
+            textAlign:"center",
+          }}>
+            {fmtC(a)} + {fmtC(b)} = {fmtC(a+b)}
+          </div>
+        ))}
+      </Card>
     </div>
   )
 }
 
 export default function T7() {
-  const [cena,setCena] = useState("intro")
-  const [idx,setIdx] = useState(0)
+  const [scene,setScene] = useState("intro")
+  const [index,setIndex] = useState(0)
+  const [unlocked,setUnlocked] = useState(false)
   const [log,setLog] = useState([])
-  const [bloq,setBloq] = useState(true)
 
-  const ir = (c,i=0) => {
-    setCena(c)
-    setIdx(i)
-    setBloq(true)
+  const sequences = {
+    ensino: [
+      {title:"Visao geral do treino", kind:"info"},
+      {title:"Observe um exemplo", kind:"observe", a:2, b:3},
+      {title:"Confirme a chegada", kind:"confirm", a:1, b:2},
+      {title:"Complete a reta", kind:"complete", a:2, b:2},
+      {title:"Explique com apoio", kind:"explain", a:3, b:4},
+      {title:"Observe no lado negativo", kind:"observe", a:-2, b:-3},
+      {title:"Confirme no lado negativo", kind:"confirm", a:-1, b:-2},
+      {title:"Complete no lado negativo", kind:"complete", a:-2, b:-2},
+      {title:"Regra do mesmo sinal", kind:"summary"},
+    ],
+    pratica: [
+      {title:"Pratica 1", kind:"confirm", a:2, b:3},
+      {title:"Pratica 2", kind:"complete", a:3, b:3},
+      {title:"Pratica 3", kind:"explain", a:4, b:4},
+      {title:"Pratica 4", kind:"confirm", a:-2, b:-3},
+      {title:"Pratica 5", kind:"complete", a:-3, b:-3},
+      {title:"Pratica 6", kind:"explain", a:-4, b:-4},
+    ],
+    escola: [
+      {title:"Modo escola", kind:"school"},
+      {title:"Leitura com numeros maiores", kind:"confirm", a:6, b:7},
+      {title:"Complete com numeros maiores", kind:"complete", a:-6, b:-7},
+      {title:"Explique com numeros maiores", kind:"explain", a:8, b:9},
+    ],
+  }
+
+  const currentList = sequences[scene] || []
+  const current = currentList[index]
+
+  const resetUnlock = () => setUnlocked(false)
+
+  const go = (nextScene, nextIndex = 0) => {
+    setScene(nextScene)
+    setIndex(nextIndex)
+    resetUnlock()
+  }
+
+  const next = () => {
+    resetUnlock()
+    const currentTotal = currentList.length
+    if (index + 1 < currentTotal) {
+      setIndex(v=>v+1)
+      return
+    }
+    if (scene === "ensino") go("pratica")
+    else if (scene === "pratica") go("escola")
+    else go("fim")
   }
 
   const desempenho = () => {
     if (!log.length) return "Treino iniciado"
-    const pct = Math.round((log.filter(v=>v.ok).length / log.length) * 100)
+    const pct = Math.round((log.filter(item=>item.ok).length / log.length) * 100)
     if (pct >= 90) return "Leitura muito consistente"
     if (pct >= 75) return "Leitura consistente"
     if (pct >= 60) return "Leitura em progresso"
     return "Treino importante"
   }
 
-  const rel = () => {
-    const oks = log.filter(l=>l.ok).length
-    const pct = log.length ? Math.round(oks/log.length*100) : 100
+  const relatorio = () => {
+    const ok = log.filter(item=>item.ok).length
+    const pct = log.length ? Math.round((ok / log.length) * 100) : 100
     const now = new Date()
-    return `Relatorio Pedro\n${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}\nT7: Adicao Sinais Iguais\n${oks}/${log.length} (${pct}%)\nDesempenho: ${desempenho()}`
+    return `Relatorio Pedro\n${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}\nT7: Sinais iguais na reta\n${ok}/${log.length} (${pct}%)\nDesempenho: ${desempenho()}`
   }
 
-  const ENSINO = [
-    {
-      titulo:"Leitura da reta",
-      render:()=>(
-        <SlideAdaptativo parcelas={[2,3]} tipo="ver" onLog={e=>setLog(p=>[...p,e])} onLiberar={()=>setBloq(false)}/>
-      ),
-    },
-    {
-      titulo:"Confirme a chegada",
-      render:()=>(
-        <SlideAdaptativo parcelas={[1,2]} tipo="confirmar" onLog={e=>setLog(p=>[...p,e])} onLiberar={()=>setBloq(false)}/>
-      ),
-    },
-    {
-      titulo:"Complete a reta",
-      render:()=>(
-        <SlideAdaptativo parcelas={[2,2]} tipo="completar" onLog={e=>setLog(p=>[...p,e])} onLiberar={()=>setBloq(false)}/>
-      ),
-    },
-    {
-      titulo:"Escolha a resposta",
-      render:()=>(
-        <SlideAdaptativo parcelas={[3,4]} tipo="escolha" onLog={e=>setLog(p=>[...p,e])} onLiberar={()=>setBloq(false)}/>
-      ),
-    },
-    {
-      titulo:"Mesmo sinal negativo",
-      render:()=>(
-        <SlideAdaptativo parcelas={[-2,-3]} tipo="ver" onLog={e=>setLog(p=>[...p,e])} onLiberar={()=>setBloq(false)}/>
-      ),
-    },
-    {
-      titulo:"Confirme no lado negativo",
-      render:()=>(
-        <SlideAdaptativo parcelas={[-1,-2]} tipo="confirmar" onLog={e=>setLog(p=>[...p,e])} onLiberar={()=>setBloq(false)}/>
-      ),
-    },
-    {
-      titulo:"Complete no lado negativo",
-      render:()=>(
-        <SlideAdaptativo parcelas={[-2,-2]} tipo="completar" onLog={e=>setLog(p=>[...p,e])} onLiberar={()=>setBloq(false)}/>
-      ),
-    },
-    {
-      titulo:"Regra do sinal igual",
-      render:()=>(
-        <Card glow={M.teal}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-            <img src={mikuImg} alt="Miku" style={{width:44,height:"auto",flexShrink:0}}/>
-            <div>
-              <div style={{fontSize:11,color:M.teal,fontFamily:TF,marginBottom:8}}>IDEIA CENTRAL</div>
-              <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.6}}>
-                Se os dois numeros tem o mesmo sinal, a reta continua para o mesmo lado.
-              </div>
-            </div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {[[2,3],[-2,-3],[4,4],[-4,-4]].map(([a,b])=>(
-              <div key={`${a}${b}`} style={{
-                background:`${cor(a+b)}10`,
-                border:`1px solid ${cor(a+b)}35`,
-                borderRadius:10,padding:"8px 10px",
-                textAlign:"center",fontFamily:TF,fontSize:12,color:cor(a+b),
-              }}>
-                {resumoPercurso(a,b)} = {fmtC(a+b)}
-              </div>
-            ))}
-          </div>
-        </Card>
-      ),
-    },
-  ]
-
-  const PRATICA = [
-    {ps:[2,3],t:"confirmar"},
-    {ps:[3,3],t:"completar"},
-    {ps:[4,4],t:"escolha"},
-    {ps:[-2,-3],t:"confirmar"},
-    {ps:[-3,-3],t:"completar"},
-    {ps:[-4,-4],t:"escolha"},
-  ]
-
-  const MODO_ESCOLA = [
-    {
-      tipo:"info",
-      titulo:"Modo escola",
-      render:()=>(
-        <Card glow={M.teal}>
-          <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7,marginBottom:10}}>
-            Quando a conta ficar maior, a reta continua sendo seu apoio.
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <div style={{fontFamily:TF,fontSize:12,color:M.pos}}>(+6) + (+7) = (+13)</div>
-            <div style={{fontFamily:TF,fontSize:12,color:M.neg}}>(-6) + (-7) = (-13)</div>
-          </div>
-        </Card>
-      ),
-    },
-    {ps:[6,7],t:"confirmar"},
-    {ps:[8,9],t:"escolha"},
-    {ps:[-6,-7],t:"completar"},
-  ]
-
-  const prox = () => {
-    setBloq(true)
-    const total = {ensino:ENSINO.length, pratica:PRATICA.length, escola:MODO_ESCOLA.length}
-    const proxCena = {ensino:"pratica", pratica:"escola", escola:"fim"}
-    if (idx+1 < total[cena]) setIdx(v=>v+1)
-    else ir(proxCena[cena])
-  }
-
-  if (cena==="intro") {
+  if (scene === "intro") {
     return (
       <Tela>
         <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",gap:18}}>
-          <div style={{textAlign:"center",fontFamily:TF,fontSize:11,color:M.teal,letterSpacing:2}}>
+          <div style={{textAlign:"center",fontFamily:TF,fontSize:11,color:M.accent,letterSpacing:2}}>
             TOPICO 7
           </div>
 
-          <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <div style={{
-              position:"absolute",width:150,height:150,borderRadius:"50%",
-              background:`radial-gradient(circle,${M.teal}18 0%,transparent 70%)`,
-              animation:"pulse 2s ease-in-out infinite",
-            }}/>
-            <img src={mikuImg} alt="Miku" style={{
-              width:120,height:"auto",position:"relative",zIndex:1,
-              filter:`drop-shadow(0 0 14px ${M.teal}80)`,
-            }}/>
-          </div>
-
-          <Card glow={M.teal}>
-            <div style={{fontSize:11,color:M.teal,fontFamily:TF,marginBottom:10}}>TREINO GUIADO</div>
-            <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7}}>
-              Hoje voce vai usar a reta para entender soma com sinais iguais.
-              Primeiro voce observa. Depois confirma. Depois completa.
+          <Card style={{display:"flex",alignItems:"center",gap:14}}>
+            <img src={mikuImg} alt="Miku" style={{width:64,height:"auto",flexShrink:0}}/>
+            <div>
+              <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:6}}>
+                Treino guiado de soma com sinais iguais
+              </div>
+              <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+                Hoje o treino vai usar reta, passos visiveis e apoio curto em cada etapa.
+              </div>
             </div>
           </Card>
 
           <Card>
             <div style={{fontSize:13,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:10}}>
-              Como vamos treinar:
+              Antes de comecar:
             </div>
             {[
-              "ver o percurso na reta",
-              "confirmar a chegada",
-              "completar a reta",
-              "escolher a resposta",
-            ].map((t,i)=>(
-              <div key={t} style={{
-                display:"flex",alignItems:"center",gap:10,padding:"8px 0",
-                borderBottom:i<3?`1px solid ${M.brd}`:"none",
+              "vamos fazer um bloco por vez",
+              "cada bloco tem comeco, meio e fim visiveis",
+              "primeiro voce observa, depois responde",
+              "se travar, a reta mostra de novo",
+            ].map((item, idx)=>(
+              <div key={item} style={{
+                display:"flex",gap:10,alignItems:"center",padding:"8px 0",
+                borderBottom:idx<3?`1px solid ${M.border}`:"none",
               }}>
-                <span style={{fontSize:16,color:M.teal}}>▸</span>
-                <span style={{fontSize:14,color:M.text,fontFamily:BF}}>{t}</span>
+                <span style={{color:M.accent,fontSize:16}}>▸</span>
+                <span style={{fontSize:14,color:M.text,fontFamily:BF}}>{item}</span>
               </div>
             ))}
           </Card>
 
-          <Btn label="Iniciar treino" onClick={()=>ir("ensino")} />
+          <Card style={{background:M.panel2}}>
+            <div style={{fontSize:12,color:M.muted,fontFamily:BF,lineHeight:1.7}}>
+              Meta do treino: entender a reta, confirmar a chegada, completar o percurso e explicar a conta sem depender de escrita longa.
+            </div>
+          </Card>
+
+          <Btn label="Iniciar treino" onClick={()=>go("ensino")} />
         </div>
       </Tela>
     )
   }
 
-  if (cena==="ensino") {
-    const slide = ENSINO[idx]
-    const ehInfo = slide.titulo === "Regra do sinal igual"
-    return (
-      <Tela>
-        <Prog n={idx} total={ENSINO.length}/>
-        <div style={{fontSize:16,color:M.teal,fontFamily:BF,fontWeight:700,marginBottom:12}}>
-          {slide.titulo}
-        </div>
-        <div style={{flex:1}}>{slide.render()}</div>
-        <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
-          <Btn
-            label={idx+1<ENSINO.length ? "Proximo" : "Ir para pratica"}
-            onClick={prox}
-            disabled={ehInfo ? false : bloq}
-          />
-          {idx>0&&(
-            <button onClick={()=>{setIdx(v=>v-1);setBloq(true)}} style={{
-              background:"none",border:"none",color:M.muted,
-              fontSize:13,cursor:"pointer",padding:"8px 0",fontFamily:BF,
-            }}>Voltar</button>
-          )}
-        </div>
-      </Tela>
-    )
-  }
-
-  if (cena==="pratica"||cena==="escola") {
-    const lista = cena==="pratica" ? PRATICA : MODO_ESCOLA
-    const item = lista[idx]
-    const corFase = cena==="pratica" ? M.teal : M.warn
-
-    if (item.tipo==="info") {
-      return (
-        <Tela>
-          <Prog n={idx} total={lista.length}/>
-          <div style={{fontSize:16,color:M.teal,fontFamily:BF,fontWeight:700,marginBottom:12}}>
-            {item.titulo}
-          </div>
-          <div style={{flex:1}}>{item.render()}</div>
-          <div style={{marginTop:14}}>
-            <Btn label="Continuar" onClick={prox}/>
-          </div>
-        </Tela>
-      )
-    }
-
-    return (
-      <Tela>
-        <Prog n={idx} total={lista.length}/>
-        <div style={{flex:1}}>
-          <SlideAdaptativo
-            key={`${cena}-${idx}-${item.ps.join("-")}-${item.t}`}
-            parcelas={item.ps}
-            tipo={item.t}
-            onLog={e=>setLog(p=>[...p,e])}
-            onLiberar={()=>setBloq(false)}
-          />
-        </div>
-        {!bloq&&(
-          <div style={{marginTop:14}}>
-            <Btn
-              label={idx+1<lista.length ? "Proximo" : cena==="pratica" ? "Modo escola" : "Encerrar"}
-              onClick={prox}
-              c={corFase}
-            />
-          </div>
-        )}
-      </Tela>
-    )
-  }
-
-  if (cena==="fim") {
+  if (scene === "fim") {
     return (
       <Tela>
         <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",gap:18}}>
-          <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <div style={{
-              position:"absolute",width:160,height:160,borderRadius:"50%",
-              background:`radial-gradient(circle,${M.teal}20 0%,transparent 70%)`,
-              animation:"pulse 2s ease-in-out infinite",
-            }}/>
-            <img src={mikuImg} alt="Miku" style={{
-              width:130,height:"auto",position:"relative",zIndex:1,
-              filter:`drop-shadow(0 0 18px ${M.teal})`,
-            }}/>
-          </div>
-
-          <Card glow={M.teal}>
-            <div style={{fontSize:11,color:M.teal,fontFamily:TF,marginBottom:10}}>FECHAMENTO</div>
+          <Card>
+            <div style={{fontSize:11,color:M.accent,fontFamily:TF,marginBottom:10}}>FECHAMENTO</div>
             <div style={{fontSize:14,color:M.text,fontFamily:BF,lineHeight:1.7}}>
-              Bom trabalho. Voce treinou a leitura da reta para somar numeros com o mesmo sinal.
+              O treino terminou. A reta foi usada para organizar a conta passo a passo e tornar a resposta mais visivel.
             </div>
           </Card>
 
           <Card>
-            <div style={{fontSize:11,color:M.teal,fontFamily:TF,marginBottom:8}}>DESEMPENHO</div>
-            <div style={{fontSize:16,color:M.text,fontFamily:BF,fontWeight:700}}>
+            <div style={{fontSize:11,color:M.accent,fontFamily:TF,marginBottom:10}}>DESEMPENHO</div>
+            <div style={{fontSize:16,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:10}}>
               {desempenho()}
+            </div>
+            <div style={{height:10,display:"flex",gap:8}}>
+              {Array.from({length:5},(_,i)=>(
+                <div key={i} style={{
+                  flex:1,
+                  borderRadius:99,
+                  background:i < Math.max(1, Math.round((log.filter(item=>item.ok).length / Math.max(log.length,1)) * 5)) ? M.accent : M.line,
+                }}/>
+              ))}
             </div>
           </Card>
 
-          <div style={{width:"100%",display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
             <Btn
               label="Compartilhar resultado"
-              c="#25D366"
-              onClick={()=>window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(rel())}`,"_blank")}
+              color="#25D366"
+              onClick={()=>window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(relatorio())}`,"_blank")}
             />
-            <Btn label="Treinar de novo" c={M.gray} ghost onClick={()=>{setLog([]);ir("intro")}} />
+            <Btn
+              label="Treinar de novo"
+              ghost
+              color={M.muted}
+              onClick={()=>{
+                setLog([])
+                go("intro")
+              }}
+            />
           </div>
         </div>
       </Tela>
     )
   }
 
-  return null
+  return (
+    <Tela>
+      <Prog index={index} total={currentList.length} />
+
+      <div style={{fontSize:16,color:M.accent,fontFamily:BF,fontWeight:700,marginBottom:12}}>
+        {current.title}
+      </div>
+
+      <div style={{flex:1}}>
+        {current.kind === "info" && (
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <Card>
+              <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
+                Estrutura do treino
+              </div>
+              <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+                Primeiro voce observa a reta. Depois confirma a chegada. Em seguida completa o percurso. So depois explica a conta.
+              </div>
+            </Card>
+            <Btn label="Continuar" onClick={()=>{
+              setUnlocked(true)
+            }} />
+          </div>
+        )}
+
+        {current.kind === "summary" && (
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <SummaryRule />
+            <Btn label="Continuar" onClick={()=>setUnlocked(true)} />
+          </div>
+        )}
+
+        {current.kind === "school" && (
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <Card>
+              <div style={{fontSize:14,color:M.text,fontFamily:BF,fontWeight:700,marginBottom:8}}>
+                Quando os numeros aumentam
+              </div>
+              <div style={{fontSize:13,color:M.muted,fontFamily:BF,lineHeight:1.6}}>
+                A estrategia nao muda. O apoio continua sendo o mesmo: ponto de partida, deslocamento e chegada.
+              </div>
+            </Card>
+            <Card style={{display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{fontFamily:TF,fontSize:12,color:M.pos,textAlign:"center"}}>(+6) + (+7) = (+13)</div>
+              <div style={{fontFamily:TF,fontSize:12,color:M.neg,textAlign:"center"}}>(-6) + (-7) = (-13)</div>
+            </Card>
+            <Btn label="Continuar" onClick={()=>setUnlocked(true)} />
+          </div>
+        )}
+
+        {["observe","confirm","complete","explain"].includes(current.kind) && (
+          <Bloco
+            a={current.a}
+            b={current.b}
+            mode={current.kind}
+            onLog={entry=>setLog(items=>[...items, entry])}
+            onUnlock={()=>setUnlocked(true)}
+          />
+        )}
+      </div>
+
+      {unlocked && (
+        <div style={{marginTop:14}}>
+          <Btn
+            label={index + 1 < currentList.length ? "Proximo" : scene === "ensino" ? "Ir para pratica" : scene === "pratica" ? "Ir para modo escola" : "Encerrar"}
+            onClick={next}
+          />
+        </div>
+      )}
+    </Tela>
+  )
 }
